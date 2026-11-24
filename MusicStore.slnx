@@ -6,5 +6,6 @@
     <Project Path="src/MusicStore.Application/MusicStore.Application.csproj" />
     <Project Path="src/MusicStore.Infrastructure/MusicStore.Infrastructure.csproj" />
     <Project Path="src/MusicStore.Api/MusicStore.Api.csproj" />
+    <Project Path="src/MusicStore.DbMigrations/MusicStore.DbMigrations.csproj" />
   </Folder>
 </Solution>
