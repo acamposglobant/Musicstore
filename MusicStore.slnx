@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/MusicStore.AppHost/MusicStore.AppHost.csproj" />
+    <Project Path="src/MusicStore.ServiceDefaults/MusicStore.ServiceDefaults.csproj" />
+  </Folder>
+</Solution>

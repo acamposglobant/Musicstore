@@ -24,4 +24,4 @@ TestResults/
 *.coverage
 
 ## Aspire / Docker local state
-.coda/tmp/
+.coda/
