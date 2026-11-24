@@ -66,11 +66,11 @@ A task is **Done** only when ALL of the following hold:
 | Metric | Value |
 |---|---|
 | **Total Tasks** | 30 |
-| **Not Started** | 22 |
+| **Not Started** | 21 |
 | **In Progress** | 0 |
 | **In Review** | 0 |
 | **Blocked** | 0 |
-| **Completed** | 8 |
+| **Completed** | 9 |
 | **Completion %** | `▓▓▓░░░░░░░ 27%` |
 
 **Tasks by Phase**
@@ -79,7 +79,7 @@ A task is **Done** only when ALL of the following hold:
 |---|---|---|
 | Phase 1: Aspire & Solution Foundation | 4 | 4 |
 | Phase 2: PostgreSQL & Schema Migration | 4 | 4 |
-| Phase 3: Domain & Dapper Infrastructure | 7 | 0 |
+| Phase 3: Domain & Dapper Infrastructure | 7 | 1 |
 | Phase 4: Minimal APIs & WCF Replacement | 5 | 0 |
 | Phase 5: Microservices Split & YARP Gateway | 3 | 0 |
 | Phase 6: xUnit & Aspire Integration Testing | 4 | 0 |
@@ -106,7 +106,7 @@ A task is **Done** only when ALL of the following hold:
 | MIG-06 | Phase 2: PostgreSQL & Schema Migration | DbUp migration runner wired into AppHost | Create `MusicStore.DbMigrations` console runner (DbUp 6.x, embedded scripts from `db/`, journal table `schemaversions`). Registered in AppHost with `WaitFor(database)`; Api waits for migrations. Idempotent re-run verified. | PostgreSQL / DbUp | `MusicStore.Database.sqlproj` deploy | M (4-8h) | Done | MIG-05 |
 | MIG-07 | Phase 2: PostgreSQL & Schema Migration | Seed data scripts | `db/100_seed.sql`: sample artists, genres, albums, songs matching legacy test data (see `Tests/MusicStore.Test`). Runs via DbUp in a `Seed` script tagged to run once. | PostgreSQL / DbUp | `UnitTestArtist.cs` fixtures | XS (1-2h) | Done | MIG-06 |
 | MIG-08 | Phase 2: PostgreSQL & Schema Migration | Schema parity verification | Script/queries verifying: PK/FK constraints, unique names, `varchar` (no `bpchar` padding), `interval` durations, indexes on FK columns. Document parity checklist result in PR. | PostgreSQL / DbUp | `MusicStoreModel.edmx` SSDL | S (2-4h) | Done | MIG-06 |
-| MIG-09 | Phase 3: Domain & Dapper Infrastructure | Pure C# domain entities | `Domain/Artist.cs`, `Genre.cs`, `Album.cs`, `Song.cs`: int IDs, required strings, `TimeSpan Duration` (maps to `interval`), navigation collections. Invariants enforced in constructors (non-empty name, positive duration). No ORM attributes. | Domain | `MusicStore.Entities/*.cs` (T4 POCOs) | S (2-4h) | Not Started | MIG-02 |
+| MIG-09 | Phase 3: Domain & Dapper Infrastructure | Pure C# domain entities | `Domain/Artist.cs`, `Genre.cs`, `Album.cs`, `Song.cs`: int IDs, required strings, `TimeSpan Duration` (maps to `interval`), navigation collections. Invariants enforced in constructors (non-empty name, positive duration). No ORM attributes. | Domain | `MusicStore.Entities/*.cs` (T4 POCOs) | S (2-4h) | Done | MIG-02 |
 | MIG-10 | Phase 3: Domain & Dapper Infrastructure | Repository interfaces | `Application/Interfaces/IArtistRepository.cs`, `IGenreRepository.cs`, `IAlbumRepository.cs`, `ISongRepository.cs`: async CRUD (`GetAllAsync`, `GetByIdAsync`, `AddAsync`, `UpdateAsync`, `DeleteAsync`) returning Domain types. | Application | `MusicStore.Data/IRepository*.cs` | XS (1-2h) | Not Started | MIG-02 |
 | MIG-11 | Phase 3: Domain & Dapper Infrastructure | NpgsqlDataSource + Dapper conventions | `Infrastructure/DependencyInjection.cs`: register singleton `NpgsqlDataSource` from Aspire connection string; `DefaultTypeMap.MatchNamesWithUnderscores = true`; snake_case mapping verified with a smoke query. | Infrastructure (Dapper) | `MusicStoreModel.Context.cs` (DbContext) | S (2-4h) | Not Started | MIG-06, MIG-02 |
 | MIG-12 | Phase 3: Domain & Dapper Infrastructure | Dapper Artist & Genre repositories | `Infrastructure/Repositories/ArtistRepository.cs`, `GenreRepository.cs`: parameterized SQL, `NpgsqlDataSource.CreateConnection()`, no shared-connection dispose bugs (connection per operation — fixes `GetGenres` bug class). | Infrastructure (Dapper) | `RepositoryArtist.cs`, `RepositoryGenre.cs`, `BaseRepository.cs` | S (2-4h) | Not Started | MIG-11 |
