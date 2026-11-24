@@ -31,6 +31,7 @@ public static class DependencyInjection
         // Repositories: scoped, connection-per-operation via the pooled data source.
         builder.Services.AddScoped<IArtistRepository, ArtistRepository>();
         builder.Services.AddScoped<IGenreRepository, GenreRepository>();
+        builder.Services.AddScoped<IAlbumRepository, AlbumRepository>();
 
         return builder;
     }
