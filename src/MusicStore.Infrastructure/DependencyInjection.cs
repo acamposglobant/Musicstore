@@ -34,6 +34,9 @@ public static class DependencyInjection
         builder.Services.AddScoped<IAlbumRepository, AlbumRepository>();
         builder.Services.AddScoped<ISongRepository, SongRepository>();
 
+        // Unit of work: scoped transaction boundary over a dedicated pooled connection.
+        builder.Services.AddScoped<IUnitOfWork, UnitOfWork.NpgsqlUnitOfWork>();
+
         return builder;
     }
 }
