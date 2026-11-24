@@ -3,6 +3,8 @@ namespace MusicStore.Infrastructure;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using MusicStore.Application.Interfaces;
+using MusicStore.Infrastructure.Repositories;
 
 /// <summary>
 /// Registers the PostgreSQL data-access stack: a singleton <see cref="NpgsqlDataSource"/>
@@ -25,6 +27,10 @@ public static class DependencyInjection
         // Dapper convention: PostgreSQL snake_case columns map to C# PascalCase
         // properties (artist_id -> Id via alias, name -> Name, ...).
         DefaultTypeMap.MatchNamesWithUnderscores = true;
+
+        // Repositories: scoped, connection-per-operation via the pooled data source.
+        builder.Services.AddScoped<IArtistRepository, ArtistRepository>();
+        builder.Services.AddScoped<IGenreRepository, GenreRepository>();
 
         return builder;
     }

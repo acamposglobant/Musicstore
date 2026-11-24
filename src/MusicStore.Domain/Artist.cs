@@ -19,6 +19,18 @@ public class Artist : Entity
         SetName(name);
     }
 
+    /// <summary>Reconstitutes an existing artist from persistence.</summary>
+    public Artist(int id, string name)
+    {
+        if (id <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(id), "Persisted artist id must be positive.");
+        }
+
+        SetName(name);
+        this.Id = id;
+    }
+
     public string Name { get; private set; } = null!;
 
     public IReadOnlyCollection<Album> Albums => this.albums;
