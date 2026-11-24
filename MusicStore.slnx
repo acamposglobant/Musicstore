@@ -2,5 +2,9 @@
   <Folder Name="/src/">
     <Project Path="src/MusicStore.AppHost/MusicStore.AppHost.csproj" />
     <Project Path="src/MusicStore.ServiceDefaults/MusicStore.ServiceDefaults.csproj" />
+    <Project Path="src/MusicStore.Domain/MusicStore.Domain.csproj" />
+    <Project Path="src/MusicStore.Application/MusicStore.Application.csproj" />
+    <Project Path="src/MusicStore.Infrastructure/MusicStore.Infrastructure.csproj" />
+    <Project Path="src/MusicStore.Api/MusicStore.Api.csproj" />
   </Folder>
 </Solution>
