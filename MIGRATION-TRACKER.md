@@ -66,18 +66,18 @@ A task is **Done** only when ALL of the following hold:
 | Metric | Value |
 |---|---|
 | **Total Tasks** | 30 |
-| **Not Started** | 29 |
+| **Not Started** | 28 |
 | **In Progress** | 0 |
 | **In Review** | 0 |
 | **Blocked** | 0 |
-| **Completed** | 1 |
-| **Completion %** | `▓░░░░░░░░░ 3%` |
+| **Completed** | 2 |
+| **Completion %** | `▓░░░░░░░░░ 7%` |
 
 **Tasks by Phase**
 
 | Phase | Tasks | Done |
 |---|---|---|
-| Phase 1: Aspire & Solution Foundation | 4 | 1 |
+| Phase 1: Aspire & Solution Foundation | 4 | 2 |
 | Phase 2: PostgreSQL & Schema Migration | 4 | 0 |
 | Phase 3: Domain & Dapper Infrastructure | 7 | 0 |
 | Phase 4: Minimal APIs & WCF Replacement | 5 | 0 |
@@ -99,7 +99,7 @@ A task is **Done** only when ALL of the following hold:
 | Task ID | Phase | Task Name | Description & Acceptance Criteria | Target Layer | Legacy Reference | Effort | Status | Dependencies |
 |---|---|---|---|---|---|---|---|---|
 | MIG-01 | Phase 1: Aspire & Solution Foundation | Create .NET 10 solution with Aspire AppHost + ServiceDefaults | `dotnet new aspire` scaffold: `MusicStore.AppHost`, `MusicStore.ServiceDefaults`. Add `Aspire.Hosting.AppHost`, `Microsoft.Extensions.Http.Resilience`, OpenTelemetry packages. AppHost runs and shows dashboard. | AppHost / Aspire | `MusicStore.sln` (new root solution) | S (2-4h) | Done | — |
-| MIG-02 | Phase 1: Aspire & Solution Foundation | Scaffold Clean Architecture projects | Create `src/MusicStore.Domain` (net10.0, zero deps), `MusicStore.Application` (refs Domain), `MusicStore.Infrastructure` (refs Application), `MusicStore.Api` (refs Application+Infrastructure). Enforce dependency rule with architecture tests stub. Add all to solution. | Domain | `MusicStore.Entities`, `MusicStore.Business` | S (2-4h) | Not Started | MIG-01 |
+| MIG-02 | Phase 1: Aspire & Solution Foundation | Scaffold Clean Architecture projects | Create `src/MusicStore.Domain` (net10.0, zero deps), `MusicStore.Application` (refs Domain), `MusicStore.Infrastructure` (refs Application), `MusicStore.Api` (refs Application+Infrastructure). Enforce dependency rule with architecture tests stub. Add all to solution. | Domain | `MusicStore.Entities`, `MusicStore.Business` | S (2-4h) | Done | MIG-01 |
 | MIG-03 | Phase 1: Aspire & Solution Foundation | Register PostgreSQL container + pgAdmin in AppHost | In `AppHost.Program`: `AddPostgres("musicstore-db")` with data volume, `AddPgAdmin`, wire `ServiceDefaults` (health checks `/health`, `/alive`, OTel exporters). Dashboard shows DB resource healthy. | AppHost / Aspire | SQL Server LocalDB `MusicStore.mdf` | S (2-4h) | Not Started | MIG-01 |
 | MIG-04 | Phase 1: Aspire & Solution Foundation | Centralized configuration & connection injection | Remove hardcoded paths pattern: connection strings flow from AppHost (`AddDatabase`) into services via `builder.AddNpgsqlDataSource(...)`-ready config. Add `Options` classes; no `App.config`/`Web.config` equivalents. | AppHost / Aspire | `Web.config` connectionStrings (hardcoded LocalDB path) | XS (1-2h) | Not Started | MIG-03 |
 | MIG-05 | Phase 2: PostgreSQL & Schema Migration | Convert T-SQL schema to PostgreSQL DDL | Author `db/001_create_tables.sql`: `artist`, `genre`, `album`, `song` tables. Fix legacy debt: `nchar(100)`→`varchar(100)` (no padding), `time(7)`→`interval`, `IDENTITY`→`GENERATED ALWAYS AS IDENTITY`, FKs `FK_Album_Artist`, `FK_Album_Genre`, `FK_Song_Album` with `ON DELETE` rules. | PostgreSQL / DbUp | `MusicStore.Database.sqlproj`, `MusicStoreModel.edmx` (SSDL) | M (4-8h) | Not Started | MIG-03 |
