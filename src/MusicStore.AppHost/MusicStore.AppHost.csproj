@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\MusicStore.Api\MusicStore.Api.csproj" />
     <ProjectReference Include="..\MusicStore.ServiceDefaults\MusicStore.ServiceDefaults.csproj" />
   </ItemGroup>
 
