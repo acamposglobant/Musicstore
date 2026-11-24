@@ -1,11 +1,14 @@
+using MusicStore.Infrastructure;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.AddServiceDefaults();
 
-// PostgreSQL connection injected by Aspire (connection name matches the
-// AppHost database resource: musicstore-db-database). No hardcoded paths.
-builder.AddNpgsqlDataSource("musicstore-db-database");
+// PostgreSQL data access registered by Infrastructure: singleton NpgsqlDataSource
+// bound to the Aspire-injected connection string + Dapper snake_case conventions.
+// No hardcoded paths — config flows from the AppHost.
+builder.AddMusicStoreInfrastructure();
 
 builder.Services.AddOpenApi();
 
