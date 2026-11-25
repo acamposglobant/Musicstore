@@ -72,6 +72,66 @@ public sealed class ProblemDetailsTests(AppHostFixture fixture)
     }
 
     [Fact]
+    public async Task Create_artist_with_over_length_name_returns_422_not_500()
+    {
+        // Review H3: the domain guard (max 100 chars) used to surface as 500.
+        var response = await fixture.GatewayClient.PostAsJsonAsync(
+            "/catalog/artists", new { name = new string('x', 101) });
+
+        await AssertProblemAsync(response, HttpStatusCode.UnprocessableEntity);
+    }
+
+    [Fact]
+    public async Task Create_genre_with_blank_name_returns_422_problem()
+    {
+        // Review H3: the Genre domain guard (blank name) used to surface as 500.
+        var response = await fixture.GatewayClient.PostAsJsonAsync(
+            "/catalog/genres", new { name = "   ", description = "Blank name test" });
+
+        await AssertProblemAsync(response, HttpStatusCode.UnprocessableEntity);
+    }
+
+    [Fact]
+    public async Task Create_album_with_over_length_title_returns_422_problem()
+    {
+        // Review H3: album title max length is 100 — the domain guard must map
+        // to 422, not 500.
+        var album = await CreateAlbumAsync("Guard Test Album");
+
+        var response = await fixture.GatewayClient.PostAsJsonAsync(
+            "/catalog/albums", new { artistId = album.ArtistId, genreId = album.GenreId, title = new string('x', 101) });
+
+        await AssertProblemAsync(response, HttpStatusCode.UnprocessableEntity);
+
+        // Cleanup parent chain.
+        await fixture.GatewayClient.DeleteAsync($"/catalog/albums/{album.Id}");
+        await fixture.GatewayClient.DeleteAsync($"/catalog/artists/{album.ArtistId}");
+        await fixture.GatewayClient.DeleteAsync($"/catalog/genres/{album.GenreId}");
+    }
+
+    [Fact]
+    public async Task Update_song_with_over_length_name_returns_422_problem()
+    {
+        // Review H3: PUT with a >50-char name hits the Song domain guard.
+        var album = await CreateAlbumAsync("Guard Test Song Album");
+        var createResponse = await fixture.GatewayClient.PostAsJsonAsync(
+            "/songs/songs", new { albumId = album.Id, name = "Valid Name", duration = TimeSpan.FromSeconds(200) });
+        createResponse.EnsureSuccessStatusCode();
+        var song = (await createResponse.Content.ReadFromJsonAsync<MusicStore.Application.Songs.SongDto>())!;
+
+        var response = await fixture.GatewayClient.PutAsJsonAsync(
+            $"/songs/songs/{song.Id}", new { name = new string('y', 51), duration = TimeSpan.FromSeconds(200) });
+
+        await AssertProblemAsync(response, HttpStatusCode.UnprocessableEntity);
+
+        // Cleanup.
+        await fixture.GatewayClient.DeleteAsync($"/songs/songs/{song.Id}");
+        await fixture.GatewayClient.DeleteAsync($"/catalog/albums/{album.Id}");
+        await fixture.GatewayClient.DeleteAsync($"/catalog/artists/{album.ArtistId}");
+        await fixture.GatewayClient.DeleteAsync($"/catalog/genres/{album.GenreId}");
+    }
+
+    [Fact]
     public async Task Problem_response_has_rfc9457_content_type()
     {
         var response = await fixture.GatewayClient.GetAsync("/catalog/artists/999999");

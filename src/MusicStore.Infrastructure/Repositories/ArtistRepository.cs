@@ -2,6 +2,7 @@ namespace MusicStore.Infrastructure.Repositories;
 
 using Dapper;
 using Microsoft.Extensions.Logging;
+using MusicStore.Application.Common;
 using MusicStore.Application.Interfaces;
 using MusicStore.Domain;
 using Npgsql;
@@ -58,7 +59,7 @@ public sealed class ArtistRepository(
         logger.LogDebug("Repository Artist.Update | SQL: UPDATE artist SET name = @name WHERE artist_id = @id | Params: {@Params} | Rows: {Rows}", new { id = artist.Id, name = artist.Name }, affected);
         if (affected == 0)
         {
-            throw new KeyNotFoundException($"Artist {artist.Id} not found.");
+            throw new NotFoundException(nameof(Artist), artist.Id);
         }
     }
 
@@ -71,7 +72,7 @@ public sealed class ArtistRepository(
         logger.LogDebug("Repository Artist.Delete | SQL: DELETE FROM artist WHERE artist_id = @id | Params: {@Params} | Rows: {Rows}", new { id = artist.Id }, affected);
         if (affected == 0)
         {
-            throw new KeyNotFoundException($"Artist {artist.Id} not found.");
+            throw new NotFoundException(nameof(Artist), artist.Id);
         }
     }
 }

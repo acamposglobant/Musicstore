@@ -45,6 +45,16 @@ public static class AlbumEndpoints
             .Produces<AlbumDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
+        _ = albums.MapGet("/{id:int}/with-details", async (int id, GetAlbumWithDetailsHandler handler, CancellationToken cancellationToken) =>
+            {
+                var album = await handler.HandleAsync(id, cancellationToken);
+                return TypedResults.Ok(album);
+            })
+            .WithName("GetAlbumWithDetails")
+            .WithSummary("Gets an album by id with artist and genre names (multi-mapping read path)")
+            .Produces<AlbumDetailsDto>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
         _ = albums.MapPost("/", async (CreateAlbumRequest request, CreateAlbumHandler handler, CancellationToken cancellationToken) =>
             {
                 var created = await handler.HandleAsync(request, cancellationToken);

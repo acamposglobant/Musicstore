@@ -172,6 +172,29 @@ public sealed class UpdateAlbumHandlerTests
     }
 
     [Fact]
+    public async Task HandleAsync_DifferentArtistAndGenre_ReassignsAlbum()
+    {
+        var albumRepository = Substitute.For<IAlbumRepository>();
+        var artistRepository = Substitute.For<IArtistRepository>();
+        var genreRepository = Substitute.For<IGenreRepository>();
+        var album = new Album(1, 10, 20, "Old Title");
+        albumRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(album);
+        artistRepository.GetByIdAsync(30, Arg.Any<CancellationToken>()).Returns(new Artist(30, "Artist Two"));
+        genreRepository.GetByIdAsync(40, Arg.Any<CancellationToken>()).Returns(new Genre(40, "Jazz", "Jazz music"));
+        var handler = new UpdateAlbumHandler(albumRepository, artistRepository, genreRepository, NullLogger<UpdateAlbumHandler>.Instance);
+
+        await handler.HandleAsync(1, new UpdateAlbumRequest(30, 40, "New Title"));
+
+        // Review H2: the reassignment must reach the saved entity, not be discarded.
+        Assert.Equal(30, album.ArtistId);
+        Assert.Equal(40, album.GenreId);
+        Assert.Equal("New Title", album.Title);
+        await albumRepository.Received(1).UpdateAsync(
+            Arg.Is<Album>(a => a.ArtistId == 30 && a.GenreId == 40 && a.Title == "New Title"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task HandleAsync_UnknownAlbum_ThrowsNotFound()
     {
         var albumRepository = Substitute.For<IAlbumRepository>();

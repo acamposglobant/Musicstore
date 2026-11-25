@@ -30,6 +30,13 @@ public sealed class MusicStoreExceptionHandler : IExceptionHandler
         {
             NotFoundException => (StatusCodes.Status404NotFound, "Resource not found"),
             ValidationException => (StatusCodes.Status422UnprocessableEntity, "Validation failed"),
+
+            // Review H3: domain guards (ArgumentException / ArgumentOutOfRangeException)
+            // fire on client-supplied input (blank names, over-length titles, non-positive
+            // durations). They are client errors — 422 with the guard message — not 500s.
+            // The guards remain the last line of defense behind handler validation.
+            ArgumentException => (StatusCodes.Status422UnprocessableEntity, "Validation failed"),
+
             _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred"),
         };
 

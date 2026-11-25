@@ -40,6 +40,21 @@ public sealed class GetAlbumByIdHandler(IAlbumRepository albumRepository)
 }
 
 /// <summary>
+/// Returns a single album with artist and genre names populated, or throws
+/// <see cref="NotFoundException"/> (review H4: the album detail page needs the
+/// names, which the flat DTO does not carry).
+/// </summary>
+public sealed class GetAlbumWithDetailsHandler(IAlbumRepository albumRepository)
+{
+    public async Task<AlbumDetailsDto> HandleAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var album = await albumRepository.GetByIdWithArtistAndGenreAsync(id, cancellationToken)
+                    ?? throw new NotFoundException(nameof(Album), id);
+        return album.ToDetailsDto();
+    }
+}
+
+/// <summary>
 /// Creates an album. Validates that the referenced artist and genre exist
 /// (legacy relied on SQL FK errors surfacing as <c>ExceptionReturn</c>).
 /// </summary>
@@ -87,6 +102,7 @@ public sealed class UpdateAlbumHandler(
             ?? throw new ValidationException($"Genre {request.GenreId} does not exist.");
 
         album.UpdateTitle(request.Title);
+        album.Reassign(request.ArtistId, request.GenreId);
         await albumRepository.UpdateAsync(album, cancellationToken);
     }
 }
