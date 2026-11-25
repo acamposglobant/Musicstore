@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.HttpLogging;
 using MusicStore.Api.Endpoints;
 using MusicStore.Api.ErrorHandling;
+using MusicStore.Application;
 using MusicStore.Infrastructure;
 using Scalar.AspNetCore;
 
@@ -15,6 +16,11 @@ builder.AddServiceDefaults();
 // Npgsql emits OpenTelemetry spans for every DB call (Aspire.Npgsql instrumentation),
 // replacing the legacy WrapperLogger/NLog + myWCFMessages.xml tracing.
 builder.AddMusicStoreInfrastructure();
+
+// Application-layer vertical-slice handlers (MIG-16). Without this registration,
+// minimal APIs infer handler parameters as body parameters and GET routes fail
+// at initialization ("Body was inferred but the method does not allow...").
+builder.Services.AddMusicStoreApplication();
 
 // Global RFC 9457 ProblemDetails error handling (MIG-17):
 // NotFoundException -> 404, ValidationException -> 422, unexpected -> 500 (no details leaked).

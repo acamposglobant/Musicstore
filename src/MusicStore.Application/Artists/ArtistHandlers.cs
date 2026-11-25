@@ -36,6 +36,13 @@ public sealed class CreateArtistHandler(IArtistRepository artistRepository)
 {
     public async Task<ArtistDto> HandleAsync(CreateArtistRequest request, CancellationToken cancellationToken = default)
     {
+        // Validate here (not the domain guard) so invalid input maps to 422
+        // ProblemDetails instead of an unexpected 500 (MIG-17 contract).
+        if (string.IsNullOrWhiteSpace(request.Name))
+        {
+            throw new ValidationException("Artist name is required.");
+        }
+
         var artist = new Artist(request.Name);
         var created = await artistRepository.AddAsync(artist, cancellationToken);
         return created.ToDto();
