@@ -1,139 +1,141 @@
-# MusicStore — Current Architecture
+# MusicStore — Target Architecture
 
-> Legacy .NET Framework solution (Visual Studio 2013, .NET 4.5.1) located under `Legacy/`.
-> Classic layered N-tier architecture with WCF services, Entity Framework 6 (Database-First EDMX), and multiple client UIs.
+> Migrated stack: .NET 10 + .NET Aspire, Clean Architecture, Dapper + PostgreSQL,
+> YARP gateway, Blazor Web App. The legacy .NET Framework 4.5.1 stack (WCF SOAP +
+> EF6/SQL Server + Silverlight) was decommissioned in Phase 7 — its final state is
+> preserved at git tag `legacy/final`.
 
 ## 1. Solution Overview
 
-Solution file: `Legacy/MusicStore.sln` — 13 projects organized in 6 solution folders:
+Solution file: `MusicStore.slnx` — 12 projects:
 
-| Layer | Project | Type | Purpose |
+| Folder | Project | Type | Purpose |
 |---|---|---|---|
-| Shared | `MusicStore.Entities` | Class Library | Domain entities (T4-generated from EDMX) + service DTOs |
-| Shared | `MusicStore.Framework` | Class Library | Cross-cutting: NLog logging wrapper (`WrapperLogger`) |
-| Data | `MusicStore.Data` | Class Library | Repository interfaces + implementations (thin wrappers) |
-| Data | `MusicStore.Data.Repository` | Class Library | EF6 Database-First model (EDMX), `DbContext`, UnitOfWork, generic BaseRepository |
-| Data | `MusicStore.Database` | SQL Server Database Project (.sqlproj) | Database schema definition |
-| Business | `MusicStore.Business` | Class Library | Business components (`MusicStoreComponent`) |
-| Services | `MusicStore.Services.Contracts` | Class Library | WCF `[ServiceContract]` interface (`IMusicStoreService`) |
-| Services | `MusicStore.Services` | Class Library | WCF service implementation (`MusicStoreService`, `BaseService`) |
-| Hosts | `MusicStore.Hosts.Web` | Web Application (IIS) | WCF service host (`MusicStoreService.svc`) |
-| Presentation | `MusicStore.UI.Windows` | WPF App | Windows desktop client (skeleton) |
-| Presentation | `MusicStore.UI.Silverlight` | Silverlight App | Browser client (skeleton) |
-| Presentation | `MusicStore.UI.Silverlight.Web` | Web Application | Silverlight host page |
-| Presentation | `MusicStore.UI.Process` | Class Library | Process/workflow layer (empty scaffold) |
-| Tests | `MusicStore.Data.Test` | MSTest | Repository integration tests (hit real DB) |
-| Tests | `MusicStore.WCF.Test` | MSTest | WCF service integration tests |
+| src | `MusicStore.AppHost` | Aspire AppHost | Orchestrates the whole system (Postgres, migrations, APIs, gateway, web) |
+| src | `MusicStore.ServiceDefaults` | Class Library | OTel tracing/metrics, health endpoints, resilience, service discovery |
+| src | `MusicStore.Domain` | Class Library | Domain entities + invariants (no dependencies) |
+| src | `MusicStore.Application` | Class Library | Handlers (CQRS-style), DTOs, validation, exceptions |
+| src | `MusicStore.Infrastructure` | Class Library | Dapper repositories, Npgsql, UnitOfWork |
+| src | `MusicStore.Api` | Minimal API | Catalog service (artists, genres, albums) |
+| src | `MusicStore.Songs.Api` | Minimal API | Songs microservice (owns all song operations) |
+| src | `MusicStore.Gateway` | YARP gateway | Single front door: `/catalog/**`, `/songs/**` |
+| src | `MusicStore.Web` | Blazor Web App | Browser UI (Interactive Server), typed client → gateway |
+| src | `MusicStore.DbMigrations` | Console (DbUp) | SQL migrations + seed, journal table |
+| tests | `MusicStore.Application.UnitTests` | xUnit | Handler unit tests (NSubstitute mocks, zero DB) |
+| tests | `MusicStore.Infrastructure.Tests` | xUnit | Dapper repository tests against real PostgreSQL (Testcontainers) |
+| tests | `MusicStore.IntegrationTests` | xUnit | End-to-end Aspire tests: CRUD, parity, ProblemDetails, UI smoke |
 
-## 2. Layered Architecture
+## 2. Runtime Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  Presentation                                                │
-│  WPF (UI.Windows) · Silverlight (UI.Silverlight)             │
-└──────────────────────────┬──────────────────────────────────┘
-                           │ WCF (basicHttpBinding, SOAP)
-┌──────────────────────────▼──────────────────────────────────┐
-│  Hosts: MusicStore.Hosts.Web (IIS, MusicStoreService.svc)    │
-├─────────────────────────────────────────────────────────────┤
-│  Services: MusicStoreService : BaseService                   │
-│            implements IMusicStoreService (Contracts)         │
-│            try/catch → ServiceReturn("OK"/"ERROR")           │
-├─────────────────────────────────────────────────────────────┤
-│  Business: MusicStoreComponent : IMusicStoreComponent        │
-│            creates UnitOfWork + repositories                 │
-├─────────────────────────────────────────────────────────────┤
-│  Data:    RepositoryArtist/Album/Genre/Song                  │
-│           inherit BaseRepository<T> (Infrastructure)         │
-├─────────────────────────────────────────────────────────────┤
-│  EF6 Database-First: MusicStoreEntityContext (EDMX)          │
-│  SQL Server (LocalDB) — MusicStore.mdf                       │
-└─────────────────────────────────────────────────────────────┘
-        Shared: MusicStore.Entities · MusicStore.Framework (NLog)
+┌──────────────────────────────────────────────────────────────┐
+│  Browser — Blazor Web App (MusicStore.Web, Interactive Server)│
+└──────────────────────────┬───────────────────────────────────┘
+                           │ HTTP (typed CatalogApiClient)
+┌──────────────────────────▼───────────────────────────────────┐
+│  YARP Gateway (single front door)                             │
+│  /catalog/** → catalog API   /songs/** → songs API            │
+│  service discovery via custom IForwarderHttpClientFactory     │
+└───────────────┬───────────────────────────┬──────────────────┘
+                │                           │
+┌───────────────▼──────────┐  ┌─────────────▼──────────────────┐
+│  MusicStore.Api          │  │  MusicStore.Songs.Api          │
+│  (artists, genres,       │  │  (songs; GET /songs?albumId=)  │
+│   albums)                │  │                                │
+│  Minimal APIs + handlers │  │  Minimal APIs + handlers       │
+└───────────────┬──────────┘  └─────────────┬──────────────────┘
+                │ Dapper (Npgsql)           │ Dapper (Npgsql)
+┌───────────────▼───────────────────────────▼──────────────────┐
+│  PostgreSQL (Aspire container, DbUp migrations on startup)    │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-### Request flow (e.g. `GetArtist`)
-1. Client calls WCF endpoint (`basicHttpBinding`, IIS-hosted).
-2. `MusicStoreService.GetArtist()` (Singleton instance, `ConcurrencyMode.Multiple`) delegates to `MusicStoreComponent`.
-3. `MusicStoreComponent` creates a `UnitOfWork` (wraps `MusicStoreEntityContext`) and a `RepositoryArtist`.
-4. `BaseRepository.GetAll()` executes `DbSet<Artist>().ToList()` against SQL Server.
-5. Result is wrapped in a `ServiceReturn` DataContract (`status` / `responseData` / `exception`); exceptions are logged via NLog and returned as `ExceptionReturn` instead of faults.
+- **AppHost** (`src/MusicStore.AppHost/AppHost.cs`): `musicstore-db` (Postgres +
+  pgAdmin), `migrations` (DbUp, runs once), `catalog` + `songs` APIs, `gateway`,
+  `web` — with `WithReference`/`WaitFor` wiring and service discovery.
+- **Gateway**: YARP with a custom `IForwarderHttpClientFactory` that attaches the
+  Aspire service-discovery handler to the forwarder pipeline (destinations are
+  logical names `http://catalog` / `http://songs`).
+- **UI**: Blazor Interactive Server; all HTTP traffic goes through the gateway;
+  RFC 9457 ProblemDetails surfaced as user-visible error messages.
 
-## 3. Key Components
+## 3. Clean Architecture layers
 
-### Services layer
-- `IMusicStoreService` (`[ServiceContract]`): `GetArtist()`, `GetGenres()` — both return `ServiceReturn`.
-- `MusicStoreService`: `[ServiceBehavior(InstanceContextMode.Single, ConcurrencyMode.Multiple)]`; instantiates `MusicStoreComponent` directly (no DI container).
-- `BaseService`: logging helpers (`LogServiceException`, `FormatException`) using `MusicStore.Framework` NLog wrapper.
-- Host config (`Web.config`): `basicHttpBinding` with maxed-out quotas, metadata enabled, `includeExceptionDetailInFaults=true`, WCF message logging to `myWCFMessages.xml`.
+| Layer | Project | Rules |
+|---|---|---|
+| Domain | `MusicStore.Domain` | Entities + invariants; zero dependencies |
+| Application | `MusicStore.Application` | Handlers per use case, DTOs, `ValidationException`/`NotFoundException`; depends only on Domain |
+| Infrastructure | `MusicStore.Infrastructure` | Dapper repositories + Npgsql UnitOfWork; implements Application ports |
+| Presentation | `MusicStore.Api`, `MusicStore.Songs.Api`, `MusicStore.Gateway`, `MusicStore.Web` | Minimal APIs / proxy / UI; depends on Application |
 
-### Business layer
-- `MusicStoreComponent` receives an `IUnitOfWork` (default ctor news one up — poor-man's injection, testable via ctor overload).
-- Known bug noted in code: `GetGenres()` disposes the repository, which disposes the shared `UnitOfWork`/DbContext before the data is materialized ("Isso não funciona, o Dispose é acionado antes").
+Cross-cutting: `MusicStore.ServiceDefaults` (OTel, health, resilience) referenced by
+every service.
 
-### Data layer
-- **Two parallel data projects** (historical duplication):
-  - `MusicStore.Data` — per-entity interfaces (`IRepositoryArtist`, etc.) and thin repository classes delegating to `MusicStore.Data.Repository`.
-  - `MusicStore.Data.Repository` — the real implementation: EF6 EDMX model, `MusicStoreEntityContext : DbContext`, generic `BaseRepository<TEntity>` (Insert/Update/Delete/GetByID/Get/GetAll), `UnitOfWork` with `BeginTransaction/Rollback/Commit` (note: `Roolback` typo; `Commit` calls `SaveChanges` then transaction commit).
-- `BaseRepository.Dispose()` disposes the **shared** DbContext — the root cause of the GetGenres bug.
+## 4. Data access (Dapper + PostgreSQL)
 
-### Entities & data model
-T4-generated POCOs in `MusicStore.Entities` (plus `ServiceReturn`/`ExceptionReturn`/`GetArtistResponse` DTOs).
+- `NpgsqlDataSource` registered via Aspire's `AddNpgsqlDataSource` (connection string
+  injected as `ConnectionStrings__musicstore-db-database`)
+- snake_case mapping, multi-mapping for enriched reads, `interval` ↔ `TimeSpan`
+- `UnitOfWork` (Npgsql transactions) for multi-write operations
+- Schema + seed applied by DbUp at startup (`db/*.sql`, journal table `scriptsrun`)
 
-```mermaid
-erDiagram
-    ARTIST ||--o{ ALBUM : "FK_Album_Artist"
-    GENRE ||--o{ ALBUM : "FK_Album_Genre"
-    ALBUM ||--o{ SONG : "FK_Song_Album"
+## 5. API surface (via gateway)
 
-    ARTIST {
-        int ArtistID PK
-        nchar Name
-    }
-    GENRE {
-        int GenreID PK
-        nchar Name
-        nchar Description
-    }
-    ALBUM {
-        int AlbumID PK
-        int GenreID FK
-        int ArtistID FK
-        nchar Title
-    }
-    SONG {
-        int SongID PK
-        int AlbumID FK
-        nvarchar Name
-        time Duration
-    }
-```
-
-### Cross-cutting
-- `MusicStore.Framework`: static `WrapperLogger` over NLog (`NLog.config` in project).
-- Connection string: EF Database-First (`metadata=res://*/...`), SQL Server LocalDB `MusicStore.mdf` — **hardcoded absolute path from the original developer's machine** in `Web.config` / `App.config`.
-
-## 4. Technology Stack
-
-| Concern | Technology |
+| Route | Purpose |
 |---|---|
-| Runtime | .NET Framework 4.5.1 |
-| IDE | Visual Studio 2013 |
-| Service layer | WCF (`basicHttpBinding`, IIS-hosted `.svc`) |
-| ORM | Entity Framework 6.1.1, Database-First (EDMX + T4) |
-| Database | SQL Server / LocalDB (`.mdf` file), `MusicStore.Database` sqlproj |
-| Logging | NLog (wrapped by `WrapperLogger`) |
-| UI | WPF, Silverlight 5 (+ Silverlight.Web host) |
-| Tests | MSTest (integration-style, real database) |
-| Serialization | `DataContractSerializer` (`ServiceReturn`, `KnownTypes`) |
+| `GET/POST/PUT/DELETE /catalog/artists[/{id}]` | Artists CRUD |
+| `GET/POST/PUT/DELETE /catalog/genres[/{id}]` | Genres CRUD |
+| `GET/POST/PUT/DELETE /catalog/albums[/{id}]` | Albums CRUD |
+| `GET /catalog/albums/with-details` | Enriched albums (artist/genre names) |
+| `GET/POST/PUT/DELETE /songs/songs[/{id}]?albumId=` | Songs CRUD (songs API) |
+| `/health`, `/alive` | Health probes on every service |
+| Errors | RFC 9457 ProblemDetails (`application/problem+json`), 404/422/500 |
 
-## 5. Observations & Technical Debt (relevant for migration)
+OpenAPI documents (`/openapi/v1.json` on each API) are the contract source of truth.
 
-- **No dependency injection** — everything is `new`-ed up the stack; WCF service is a Singleton.
-- **Repository/UnitOfWork lifetime bugs** — disposing a repository disposes the shared DbContext; lazy-loading + dispose patterns are fragile.
-- **`ServiceReturn.responseData` is `object`** — weakly typed service contract, relies on `KnownType` attributes.
-- **Environment-coupled config** — absolute LocalDB file paths in connection strings; Portuguese comments/messages.
-- **Dead/obsolete UIs** — Silverlight (EOL) and an empty WPF shell; `MusicStore.UI.Process` and `MusicStore.Data.Agents` are empty scaffolds.
-- **Tests hit the real database** — no mocking/seams; they double as smoke tests.
-- **Backup file** `backup.MusicStoreRepository.cs` and duplicated data projects indicate refactoring was in progress when the codebase was frozen.
-- **Security posture** — `includeExceptionDetailInFaults=true`, no transport security, maxed quotas.
+## 6. Testing strategy
+
+| Suite | Project | What it covers |
+|---|---|---|
+| Unit | `MusicStore.Application.UnitTests` (47) | Handler logic with mocked repositories |
+| Repository | `MusicStore.Infrastructure.Tests` (39) | Real PostgreSQL via Testcontainers: snake_case, multi-mapping, interval, transactions |
+| Integration | `MusicStore.IntegrationTests` (30) | Full Aspire app: CRUD through gateway, legacy parity, ProblemDetails, UI smoke |
+
+## 7. Run it
+
+```bash
+dotnet run --project src/MusicStore.AppHost
+```
+
+The Aspire dashboard opens with all resources (Postgres, pgAdmin, migrations,
+catalog, songs, gateway, web). The Blazor UI is the `web` resource; the gateway
+is the single entry point for API traffic.
+
+## 8. Migration history
+
+- Tracker: `MIGRATION-TRACKER.md` (36 tasks, 9 phases)
+- Key docs: `docs/MIG-08-schema-parity.md`, `docs/MIG-27-legacy-parity.md`,
+  `docs/MIG-28-cutover-checklist.md`, `docs/MIG-UI-migration-plan.md`
+- Legacy stack: preserved at tag `legacy/final` (deleted from the working tree in MIG-29)
+
+## 9. Lessons learned
+
+- **Register handlers in DI before minimal APIs see them** — unregistered complex-type
+  parameters get inferred as body parameters and GET routes fail at startup with a
+  misleading error.
+- **YARP's forwarder bypasses `IHttpClientFactory`** — service discovery needs a custom
+  `IForwarderHttpClientFactory` (YARP 2.3 has no `AddHttpMessageHandler`).
+- **YARP cluster config schema is strict**: `Destinations: { name: { Address } }` — a
+  singular `Destination` key silently loads zero destinations.
+- **`AddDotnetProject` does not infer launchSettings endpoints** — declare
+  `.WithHttpEndpoint()` explicitly.
+- **`Response.WriteAsJsonAsync` overwrites a manually-set ContentType** — pass the
+  content type as a parameter (`application/problem+json`).
+- **Domain guards (`ArgumentException`) leak as 500s** — validate in handlers and throw
+  `ValidationException` to map to 422 ProblemDetails.
+- **Blazor Web App template (this SDK) requires `app.UseAntiforgery()`** — without it
+  every page 500s; also remove the unsupported `<BasePath>` element.
+- **Interactive Server renders data over SignalR** — initial HTML contains the shell,
+  not the data; smoke tests must assert page availability, not rows.
+- **End-to-end tests pay for themselves immediately** — the MIG-26 harness surfaced 7
+  latent bugs that no lower-level suite caught.
