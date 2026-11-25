@@ -1,3 +1,4 @@
+using MusicStore.Api.ErrorHandling;
 using MusicStore.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,11 +11,17 @@ builder.AddServiceDefaults();
 // No hardcoded paths — config flows from the AppHost.
 builder.AddMusicStoreInfrastructure();
 
+// Global RFC 9457 ProblemDetails error handling (MIG-17):
+// NotFoundException -> 404, ValidationException -> 422, unexpected -> 500 (no details leaked).
+builder.AddMusicStoreErrorHandling();
+
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+app.UseMusicStoreErrorHandling();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();

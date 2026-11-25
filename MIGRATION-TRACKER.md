@@ -66,12 +66,12 @@ A task is **Done** only when ALL of the following hold:
 | Metric | Value |
 |---|---|
 | **Total Tasks** | 30 |
-| **Not Started** | 14 |
+| **Not Started** | 13 |
 | **In Progress** | 0 |
 | **In Review** | 0 |
 | **Blocked** | 0 |
-| **Completed** | 16 |
-| **Completion %** | `▓▓▓▓▓▓░░░░ 53%` |
+| **Completed** | 17 |
+| **Completion %** | `▓▓▓▓▓▓░░░░ 57%` |
 
 **Tasks by Phase**
 
@@ -80,7 +80,7 @@ A task is **Done** only when ALL of the following hold:
 | Phase 1: Aspire & Solution Foundation | 4 | 4 |
 | Phase 2: PostgreSQL & Schema Migration | 4 | 4 |
 | Phase 3: Domain & Dapper Infrastructure | 7 | 7 |
-| Phase 4: Minimal APIs & WCF Replacement | 5 | 1 |
+| Phase 4: Minimal APIs & WCF Replacement | 5 | 2 |
 | Phase 5: Microservices Split & YARP Gateway | 3 | 0 |
 | Phase 6: xUnit & Aspire Integration Testing | 4 | 0 |
 | Phase 7: Legacy Decommission | 3 | 0 |
@@ -114,7 +114,7 @@ A task is **Done** only when ALL of the following hold:
 | MIG-14 | Phase 3: Domain & Dapper Infrastructure | Dapper SongRepository (interval mapping) | `SongRepository`: `TimeSpan` ↔ PostgreSQL `interval` type handler (`NpgsqlTypeHandler`/Dapper type map). CRUD + `GetByAlbumIdAsync`. | Infrastructure (Dapper) | `RepositorySong.cs` | S (2-4h) | Done | MIG-12 |
 | MIG-15 | Phase 3: Domain & Dapper Infrastructure | Transaction/unit-of-work replacement | `Infrastructure/IUnitOfWork.cs` + implementation wrapping `NpgsqlTransaction` over a scoped connection; replaces legacy `UnitOfWork` (fix `Roolback` typo semantics; commit = transaction commit, no implicit `SaveChanges`). | Infrastructure (Dapper) | `Infrastructure/UnitOfWork.cs` | S (2-4h) | Done | MIG-11 |
 | MIG-16 | Phase 4: Minimal APIs & WCF Replacement | Application handlers + DTOs (kill ServiceReturn) | `Application/Artists/GetArtists/` etc. (handler + `ArtistDto` + mapping). No `ServiceReturn`/`object responseData` — handlers return typed results; failures throw domain exceptions mapped to HTTP later. | Application | `MusicStoreComponent.cs`, `ServiceReturn.cs`, `ExceptionReturn.cs` | M (4-8h) | Done | MIG-10 |
-| MIG-17 | Phase 4: Minimal APIs & WCF Replacement | Global error handling → RFC 9457 ProblemDetails | `AddProblemDetails()`, exception handler mapping `KeyNotFoundException`→404, `ValidationException`→422, unexpected→500 (no stack traces; replaces `includeExceptionDetailInFaults=true` + `FormatException`). | API (Minimal APIs) | `BaseService.LogServiceException/FormatException` | S (2-4h) | Not Started | MIG-16 |
+| MIG-17 | Phase 4: Minimal APIs & WCF Replacement | Global error handling → RFC 9457 ProblemDetails | `AddProblemDetails()`, exception handler mapping `KeyNotFoundException`→404, `ValidationException`→422, unexpected→500 (no stack traces; replaces `includeExceptionDetailInFaults=true` + `FormatException`). | API (Minimal APIs) | `BaseService.LogServiceException/FormatException` | S (2-4h) | Done | MIG-16 |
 | MIG-18 | Phase 4: Minimal APIs & WCF Replacement | Artists & Genres Minimal API endpoints | `Api/Endpoints/ArtistEndpoints.cs`, `GenreEndpoints.cs`: `GET /artists`, `GET /artists/{id}`, `POST`, `PUT`, `DELETE` with `TypedResults.Ok/Created/NoContent/NotFound`, request validation, OpenAPI metadata. Replaces `GetArtist()`/`GetGenres()` SOAP ops. | API (Minimal APIs) | `IMusicStoreService`, `MusicStoreService` | M (4-8h) | Not Started | MIG-12, MIG-16 |
 | MIG-19 | Phase 4: Minimal APIs & WCF Replacement | Albums & Songs Minimal API endpoints | CRUD endpoints incl. `GET /albums?include=artist,genre` (multi-mapping read path) and `GET /albums/{id}/songs`. Same `TypedResults` + ProblemDetails conventions. | API (Minimal APIs) | `MusicStoreService`, `GetArtistResponse` | M (4-8h) | Not Started | MIG-13, MIG-14 |
 | MIG-20 | Phase 4: Minimal APIs & WCF Replacement | Observability & API polish | OpenAPI UI, request logging, OTel traces span DB calls (via ServiceDefaults), rate of `LogCritical` parity with NLog wrapper. Structured logging replaces `WrapperLogger`. | API (Minimal APIs) | `MusicStore.Framework/WrapperLogger.cs`, `NLog.config` | S (2-4h) | Not Started | MIG-18 |
