@@ -36,4 +36,8 @@ app.MapGet("/", () => Results.Ok(new { service = "MusicStore.Api", status = "run
 app.MapArtistEndpoints();
 app.MapGenreEndpoints();
 
+// Albums & Songs CRUD (MIG-19): enriched read path + nested songs collection.
+app.MapAlbumEndpoints();
+app.MapSongEndpoints();
+
 app.Run();
