@@ -1,0 +1,76 @@
+@page "/genres"
+@using MusicStore.Web.Services
+@inject CatalogApiClient Catalog
+@implements IDisposable
+
+<PageTitle>Genres — MusicStore</PageTitle>
+
+<h1>Genres</h1>
+
+@if (this.genres is null)
+{
+    <p><em>Loading…</em></p>
+}
+else if (this.errorMessage is not null)
+{
+    <div class="alert alert-error" role="alert">
+        <strong>Could not load genres.</strong> @this.errorMessage
+    </div>
+}
+else
+{
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (this.genres.Count == 0)
+            {
+                <tr><td colspan="3" class="empty-row">No genres yet.</td></tr>
+            }
+            else
+            {
+                @foreach (var genre in this.genres)
+                {
+                    <tr>
+                        <td>@genre.Id</td>
+                        <td>@genre.Name</td>
+                        <td>@genre.Description</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private IReadOnlyList<GenreDto>? genres;
+    private string? errorMessage;
+    private CancellationTokenSource? loadCts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        this.loadCts = new CancellationTokenSource();
+        try
+        {
+            this.genres = await this.Catalog.GetGenresAsync(this.loadCts.Token);
+        }
+        catch (CatalogApiException ex)
+        {
+            this.errorMessage = Artists.DescribeError(ex);
+        }
+        catch (HttpRequestException ex)
+        {
+            this.errorMessage = $"The catalog service is unreachable: {ex.Message}";
+        }
+    }
+
+    public void Dispose()
+    {
+        this.loadCts?.Dispose();
+    }
+}

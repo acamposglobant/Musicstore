@@ -1,0 +1,79 @@
+@page "/artists"
+@using MusicStore.Web.Services
+@inject CatalogApiClient Catalog
+@implements IDisposable
+
+<PageTitle>Artists — MusicStore</PageTitle>
+
+<h1>Artists</h1>
+
+@if (this.artists is null)
+{
+    <p><em>Loading…</em></p>
+}
+else if (this.errorMessage is not null)
+{
+    <div class="alert alert-error" role="alert">
+        <strong>Could not load artists.</strong> @this.errorMessage
+    </div>
+}
+else
+{
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (this.artists.Count == 0)
+            {
+                <tr><td colspan="2" class="empty-row">No artists yet.</td></tr>
+            }
+            else
+            {
+                @foreach (var artist in this.artists)
+                {
+                    <tr>
+                        <td>@artist.Id</td>
+                        <td>@artist.Name</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private IReadOnlyList<ArtistDto>? artists;
+    private string? errorMessage;
+    private CancellationTokenSource? loadCts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        this.loadCts = new CancellationTokenSource();
+        try
+        {
+            this.artists = await this.Catalog.GetArtistsAsync(this.loadCts.Token);
+        }
+        catch (CatalogApiException ex)
+        {
+            this.errorMessage = DescribeError(ex);
+        }
+        catch (HttpRequestException ex)
+        {
+            this.errorMessage = $"The catalog service is unreachable: {ex.Message}";
+        }
+    }
+
+    public void Dispose()
+    {
+        this.loadCts?.Dispose();
+    }
+
+    /// <summary>Maps a gateway ProblemDetails response to a user-visible message.</summary>
+    internal static string DescribeError(CatalogApiException ex) => ex.Problem?.Detail
+        ?? ex.Problem?.Title
+        ?? $"The request failed (HTTP {(int)ex.StatusCode}).";
+}
