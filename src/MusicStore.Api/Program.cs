@@ -1,3 +1,4 @@
+using MusicStore.Api.Endpoints;
 using MusicStore.Api.ErrorHandling;
 using MusicStore.Infrastructure;
 
@@ -30,5 +31,9 @@ if (app.Environment.IsDevelopment())
 app.MapGet("/", () => Results.Ok(new { service = "MusicStore.Api", status = "running" }))
     .WithName("GetRoot")
     .WithSummary("Service info root endpoint");
+
+// Catalog CRUD (MIG-18): replaces the legacy GetArtist()/GetGenres() SOAP operations.
+app.MapArtistEndpoints();
+app.MapGenreEndpoints();
 
 app.Run();
