@@ -12,5 +12,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/MusicStore.Application.UnitTests/MusicStore.Application.UnitTests.csproj" />
+    <Project Path="tests/MusicStore.Infrastructure.Tests/MusicStore.Infrastructure.Tests.csproj" />
   </Folder>
 </Solution>
