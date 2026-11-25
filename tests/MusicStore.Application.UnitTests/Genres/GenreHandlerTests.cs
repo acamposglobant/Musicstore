@@ -1,5 +1,6 @@
 namespace MusicStore.Application.UnitTests.Genres;
 
+using Microsoft.Extensions.Logging.Abstractions;
 using MusicStore.Application.Common;
 using MusicStore.Application.Genres;
 using MusicStore.Application.Interfaces;
@@ -85,7 +86,7 @@ public sealed class CreateGenreHandlerTests
                 var genre = callInfo.Arg<Genre>();
                 return new Genre(99, genre.Name, genre.Description);
             });
-        var handler = new CreateGenreHandler(repository);
+        var handler = new CreateGenreHandler(repository, NullLogger<CreateGenreHandler>.Instance);
 
         var result = await handler.HandleAsync(new CreateGenreRequest("Genre One", "Description One"));
 
@@ -98,7 +99,7 @@ public sealed class CreateGenreHandlerTests
         var repository = Substitute.For<IGenreRepository>();
         repository.AddAsync(Arg.Any<Genre>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => callInfo.Arg<Genre>());
-        var handler = new CreateGenreHandler(repository);
+        var handler = new CreateGenreHandler(repository, NullLogger<CreateGenreHandler>.Instance);
 
         _ = await handler.HandleAsync(new CreateGenreRequest("Genre One", "Description One"));
 
@@ -116,7 +117,7 @@ public sealed class UpdateGenreHandlerTests
         var repository = Substitute.For<IGenreRepository>();
         repository.GetByIdAsync(1, Arg.Any<CancellationToken>())
             .Returns(new Genre(1, "Genre One", "Description One"));
-        var handler = new UpdateGenreHandler(repository);
+        var handler = new UpdateGenreHandler(repository, NullLogger<UpdateGenreHandler>.Instance);
 
         await handler.HandleAsync(1, new UpdateGenreRequest("Renamed", "New Description"));
 
@@ -130,7 +131,7 @@ public sealed class UpdateGenreHandlerTests
     {
         var repository = Substitute.For<IGenreRepository>();
         repository.GetByIdAsync(99, Arg.Any<CancellationToken>()).ReturnsNull();
-        var handler = new UpdateGenreHandler(repository);
+        var handler = new UpdateGenreHandler(repository, NullLogger<UpdateGenreHandler>.Instance);
 
         await Assert.ThrowsAsync<NotFoundException>(
             () => handler.HandleAsync(99, new UpdateGenreRequest("Renamed", "New Description")));
@@ -147,7 +148,7 @@ public sealed class DeleteGenreHandlerTests
         var repository = Substitute.For<IGenreRepository>();
         var genre = new Genre(1, "Genre One", "Description One");
         repository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(genre);
-        var handler = new DeleteGenreHandler(repository);
+        var handler = new DeleteGenreHandler(repository, NullLogger<DeleteGenreHandler>.Instance);
 
         await handler.HandleAsync(1);
 
@@ -159,7 +160,7 @@ public sealed class DeleteGenreHandlerTests
     {
         var repository = Substitute.For<IGenreRepository>();
         repository.GetByIdAsync(99, Arg.Any<CancellationToken>()).ReturnsNull();
-        var handler = new DeleteGenreHandler(repository);
+        var handler = new DeleteGenreHandler(repository, NullLogger<DeleteGenreHandler>.Instance);
 
         await Assert.ThrowsAsync<NotFoundException>(() => handler.HandleAsync(99));
 

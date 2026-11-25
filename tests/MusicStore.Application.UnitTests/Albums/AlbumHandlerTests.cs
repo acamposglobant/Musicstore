@@ -1,5 +1,6 @@
 namespace MusicStore.Application.UnitTests.Albums;
 
+using Microsoft.Extensions.Logging.Abstractions;
 using MusicStore.Application.Common;
 using MusicStore.Application.Interfaces;
 using MusicStore.Application.Albums;
@@ -107,7 +108,7 @@ public sealed class CreateAlbumHandlerTests
                 var album = callInfo.Arg<Album>();
                 return new Album(42, album.ArtistId, album.GenreId, album.Title);
             });
-        var handler = new CreateAlbumHandler(albumRepository, artistRepository, genreRepository);
+        var handler = new CreateAlbumHandler(albumRepository, artistRepository, genreRepository, NullLogger<CreateAlbumHandler>.Instance);
 
         var result = await handler.HandleAsync(new CreateAlbumRequest(10, 20, "New Album"));
 
@@ -124,7 +125,7 @@ public sealed class CreateAlbumHandlerTests
         var artistRepository = Substitute.For<IArtistRepository>();
         var genreRepository = Substitute.For<IGenreRepository>();
         artistRepository.GetByIdAsync(99, Arg.Any<CancellationToken>()).ReturnsNull();
-        var handler = new CreateAlbumHandler(albumRepository, artistRepository, genreRepository);
+        var handler = new CreateAlbumHandler(albumRepository, artistRepository, genreRepository, NullLogger<CreateAlbumHandler>.Instance);
 
         var exception = await Assert.ThrowsAsync<ValidationException>(
             () => handler.HandleAsync(new CreateAlbumRequest(99, 20, "X")));
@@ -141,7 +142,7 @@ public sealed class CreateAlbumHandlerTests
         var genreRepository = Substitute.For<IGenreRepository>();
         artistRepository.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(new Artist(10, "Artist One"));
         genreRepository.GetByIdAsync(99, Arg.Any<CancellationToken>()).ReturnsNull();
-        var handler = new CreateAlbumHandler(albumRepository, artistRepository, genreRepository);
+        var handler = new CreateAlbumHandler(albumRepository, artistRepository, genreRepository, NullLogger<CreateAlbumHandler>.Instance);
 
         await Assert.ThrowsAsync<ValidationException>(
             () => handler.HandleAsync(new CreateAlbumRequest(10, 99, "X")));
@@ -162,7 +163,7 @@ public sealed class UpdateAlbumHandlerTests
         albumRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(album);
         artistRepository.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(new Artist(10, "Artist One"));
         genreRepository.GetByIdAsync(20, Arg.Any<CancellationToken>()).Returns(new Genre(20, "Rock", "Rock music"));
-        var handler = new UpdateAlbumHandler(albumRepository, artistRepository, genreRepository);
+        var handler = new UpdateAlbumHandler(albumRepository, artistRepository, genreRepository, NullLogger<UpdateAlbumHandler>.Instance);
 
         await handler.HandleAsync(1, new UpdateAlbumRequest(10, 20, "New Title"));
 
@@ -177,7 +178,7 @@ public sealed class UpdateAlbumHandlerTests
         var artistRepository = Substitute.For<IArtistRepository>();
         var genreRepository = Substitute.For<IGenreRepository>();
         albumRepository.GetByIdAsync(99, Arg.Any<CancellationToken>()).ReturnsNull();
-        var handler = new UpdateAlbumHandler(albumRepository, artistRepository, genreRepository);
+        var handler = new UpdateAlbumHandler(albumRepository, artistRepository, genreRepository, NullLogger<UpdateAlbumHandler>.Instance);
 
         await Assert.ThrowsAsync<NotFoundException>(
             () => handler.HandleAsync(99, new UpdateAlbumRequest(10, 20, "X")));
@@ -193,7 +194,7 @@ public sealed class UpdateAlbumHandlerTests
         var genreRepository = Substitute.For<IGenreRepository>();
         albumRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(new Album(1, 10, 20, "Album One"));
         artistRepository.GetByIdAsync(99, Arg.Any<CancellationToken>()).ReturnsNull();
-        var handler = new UpdateAlbumHandler(albumRepository, artistRepository, genreRepository);
+        var handler = new UpdateAlbumHandler(albumRepository, artistRepository, genreRepository, NullLogger<UpdateAlbumHandler>.Instance);
 
         await Assert.ThrowsAsync<ValidationException>(
             () => handler.HandleAsync(1, new UpdateAlbumRequest(99, 20, "X")));
@@ -208,7 +209,7 @@ public sealed class UpdateAlbumHandlerTests
         albumRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(new Album(1, 10, 20, "Album One"));
         artistRepository.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(new Artist(10, "Artist One"));
         genreRepository.GetByIdAsync(99, Arg.Any<CancellationToken>()).ReturnsNull();
-        var handler = new UpdateAlbumHandler(albumRepository, artistRepository, genreRepository);
+        var handler = new UpdateAlbumHandler(albumRepository, artistRepository, genreRepository, NullLogger<UpdateAlbumHandler>.Instance);
 
         await Assert.ThrowsAsync<ValidationException>(
             () => handler.HandleAsync(1, new UpdateAlbumRequest(10, 99, "X")));
@@ -225,7 +226,7 @@ public sealed class DeleteAlbumHandlerTests
         var albumRepository = Substitute.For<IAlbumRepository>();
         var album = new Album(1, 10, 20, "Album One");
         albumRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(album);
-        var handler = new DeleteAlbumHandler(albumRepository);
+        var handler = new DeleteAlbumHandler(albumRepository, NullLogger<DeleteAlbumHandler>.Instance);
 
         await handler.HandleAsync(1);
 
@@ -237,7 +238,7 @@ public sealed class DeleteAlbumHandlerTests
     {
         var albumRepository = Substitute.For<IAlbumRepository>();
         albumRepository.GetByIdAsync(99, Arg.Any<CancellationToken>()).ReturnsNull();
-        var handler = new DeleteAlbumHandler(albumRepository);
+        var handler = new DeleteAlbumHandler(albumRepository, NullLogger<DeleteAlbumHandler>.Instance);
 
         await Assert.ThrowsAsync<NotFoundException>(() => handler.HandleAsync(99));
 

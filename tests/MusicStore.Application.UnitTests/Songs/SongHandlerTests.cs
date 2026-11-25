@@ -1,5 +1,6 @@
 namespace MusicStore.Application.UnitTests.Songs;
 
+using Microsoft.Extensions.Logging.Abstractions;
 using MusicStore.Application.Common;
 using MusicStore.Application.Interfaces;
 using MusicStore.Application.Songs;
@@ -117,7 +118,7 @@ public sealed class CreateSongHandlerTests
                 var song = callInfo.Arg<Song>();
                 return new Song(99, song.AlbumId, song.Name, song.Duration);
             });
-        var handler = new CreateSongHandler(songRepository, albumRepository);
+        var handler = new CreateSongHandler(songRepository, albumRepository, NullLogger<CreateSongHandler>.Instance);
 
         var result = await handler.HandleAsync(
             new CreateSongRequest(10, "Song One", TimeSpan.FromMinutes(3)));
@@ -134,7 +135,7 @@ public sealed class CreateSongHandlerTests
             .Returns(new Album(10, 1, 1, "Album"));
         songRepository.AddAsync(Arg.Any<Song>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => callInfo.Arg<Song>());
-        var handler = new CreateSongHandler(songRepository, albumRepository);
+        var handler = new CreateSongHandler(songRepository, albumRepository, NullLogger<CreateSongHandler>.Instance);
 
         _ = await handler.HandleAsync(
             new CreateSongRequest(10, "Song One", TimeSpan.FromMinutes(3)));
@@ -150,7 +151,7 @@ public sealed class CreateSongHandlerTests
         var songRepository = Substitute.For<ISongRepository>();
         var albumRepository = Substitute.For<IAlbumRepository>();
         albumRepository.GetByIdAsync(99, Arg.Any<CancellationToken>()).ReturnsNull();
-        var handler = new CreateSongHandler(songRepository, albumRepository);
+        var handler = new CreateSongHandler(songRepository, albumRepository, NullLogger<CreateSongHandler>.Instance);
 
         var exception = await Assert.ThrowsAsync<ValidationException>(
             () => handler.HandleAsync(new CreateSongRequest(99, "Song One", TimeSpan.FromMinutes(3))));
@@ -168,7 +169,7 @@ public sealed class UpdateSongHandlerTests
         var repository = Substitute.For<ISongRepository>();
         repository.GetByIdAsync(1, Arg.Any<CancellationToken>())
             .Returns(new Song(1, 10, "Song One", TimeSpan.FromMinutes(3)));
-        var handler = new UpdateSongHandler(repository);
+        var handler = new UpdateSongHandler(repository, NullLogger<UpdateSongHandler>.Instance);
 
         await handler.HandleAsync(1, new UpdateSongRequest("Renamed", TimeSpan.FromMinutes(5)));
 
@@ -182,7 +183,7 @@ public sealed class UpdateSongHandlerTests
     {
         var repository = Substitute.For<ISongRepository>();
         repository.GetByIdAsync(99, Arg.Any<CancellationToken>()).ReturnsNull();
-        var handler = new UpdateSongHandler(repository);
+        var handler = new UpdateSongHandler(repository, NullLogger<UpdateSongHandler>.Instance);
 
         await Assert.ThrowsAsync<NotFoundException>(
             () => handler.HandleAsync(99, new UpdateSongRequest("Renamed", TimeSpan.FromMinutes(5))));
@@ -199,7 +200,7 @@ public sealed class DeleteSongHandlerTests
         var repository = Substitute.For<ISongRepository>();
         var song = new Song(1, 10, "Song One", TimeSpan.FromMinutes(3));
         repository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(song);
-        var handler = new DeleteSongHandler(repository);
+        var handler = new DeleteSongHandler(repository, NullLogger<DeleteSongHandler>.Instance);
 
         await handler.HandleAsync(1);
 
@@ -211,7 +212,7 @@ public sealed class DeleteSongHandlerTests
     {
         var repository = Substitute.For<ISongRepository>();
         repository.GetByIdAsync(99, Arg.Any<CancellationToken>()).ReturnsNull();
-        var handler = new DeleteSongHandler(repository);
+        var handler = new DeleteSongHandler(repository, NullLogger<DeleteSongHandler>.Instance);
 
         await Assert.ThrowsAsync<NotFoundException>(() => handler.HandleAsync(99));
 
