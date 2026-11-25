@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MusicStore Code Review</title>
+<style>
+  :root {
+    --bg: #f7f7f5;
+    --surface: #ffffff;
+    --text: #1f2328;
+    --muted: #59636e;
+    --border: #d9dee3;
+    --accent: #0b5cad;
+    --code-bg: #eef1f4;
+    --high: #b42318;
+    --high-bg: #fde8e6;
+    --medium: #b54708;
+    --medium-bg: #fdf0e1;
+    --low: #175cd3;
+    --low-bg: #e6effc;
+    --good: #067647;
+    --good-bg: #e3f5ea;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1216;
+      --surface: #171b21;
+      --text: #e6e8eb;
+      --muted: #9aa4af;
+      --border: #2a313a;
+      --accent: #6cb2ff;
+      --code-bg: #20262e;
+      --high: #ff8a80;
+      --high-bg: #3a1c1a;
+      --medium: #ffb866;
+      --medium-bg: #3a2a16;
+      --low: #8fbaff;
+      --low-bg: #182840;
+      --good: #6fd39a;
+      --good-bg: #163324;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1216; --surface: #171b21; --text: #e6e8eb; --muted: #9aa4af; --border: #2a313a;
+    --accent: #6cb2ff; --code-bg: #20262e; --high: #ff8a80; --high-bg: #3a1c1a; --medium: #ffb866;
+    --medium-bg: #3a2a16; --low: #8fbaff; --low-bg: #182840; --good: #6fd39a; --good-bg: #163324;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  main { max-width: 980px; margin: 0 auto; padding: 32px 16px 64px; }
+  header { margin-bottom: 28px; }
+  h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  h2 { font-size: 22px; margin: 40px 0 14px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 17px; margin: 0 0 6px; }
+  p { margin: 0 0 10px; }
+  .meta { color: var(--muted); font-size: 14px; }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13.5px; }
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+  pre { background: var(--code-bg); padding: 10px 12px; border-radius: 6px; overflow-x: auto; margin: 8px 0; }
+  pre code { background: none; padding: 0; }
+  table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .badge { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; }
+  .badge.high { color: var(--high); background: var(--high-bg); }
+  .badge.medium { color: var(--medium); background: var(--medium-bg); }
+  .badge.low { color: var(--low); background: var(--low-bg); }
+  .badge.good { color: var(--good); background: var(--good-bg); }
+  .finding { background: var(--surface); border: 1px solid var(--border); border-left-width: 4px; border-radius: 8px; padding: 16px 18px; margin: 14px 0; }
+  .finding.high { border-left-color: var(--high); }
+  .finding.medium { border-left-color: var(--medium); }
+  .finding.low { border-left-color: var(--low); }
+  .finding .head { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; margin-bottom: 6px; }
+  .finding .id { color: var(--muted); font-size: 13px; font-weight: 600; }
+  .finding .where { color: var(--muted); font-size: 13.5px; margin-bottom: 8px; }
+  .finding .where code { font-size: 12.5px; }
+  dl { margin: 8px 0 0; display: grid; grid-template-columns: 110px 1fr; gap: 4px 12px; }
+  dt { color: var(--muted); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; padding-top: 2px; }
+  dd { margin: 0; }
+  ul { margin: 4px 0 8px; padding-left: 22px; }
+  li { margin: 3px 0; }
+  .toc { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 18px; }
+  .toc ol { margin: 6px 0 0; padding-left: 22px; columns: 2; column-gap: 32px; }
+  .toc li { break-inside: avoid; }
+  a { color: var(--accent); }
+  .good-list li { margin: 5px 0; }
+  @media (max-width: 640px) {
+    .toc ol { columns: 1; }
+    dl { grid-template-columns: 1fr; }
+    h1 { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <h1>MusicStore Code Review</h1>
+  <p class="meta">Static analysis of the repository at commit <code>9f5f5c8</code> (branch <code>main</code>, 2026-11-25). Scope: all projects under <code>src/</code>, <code>tests/</code>, <code>db/</code>, the AppHost, CI workflow and solution file. Every finding below was verified against the source, the git history, or the Serilog log files produced by today's run.</p>
+</header>
+
+<h2>Summary</h2>
+<p>The migration produced a clean, readable codebase: Clean Architecture layering is respected, SQL is parameterized everywhere, errors are RFC 9457 ProblemDetails with no leaked stack traces, and three test tiers exist. The problems found are mostly integration seams between well-built parts: a hosting call dropped in the last feature commit, an update handler that validates fields it never persists, a UI page reading fields an endpoint does not return, and a CI pipeline that cannot see one of the three test projects.</p>
+
+<table aria-label="Finding counts by severity">
+  <thead><tr><th>Severity</th><th>Meaning</th><th class="num">Count</th></tr></thead>
+  <tbody>
+    <tr><td><span class="badge high">High</span></td><td>Functional bug or regression a user or operator will hit</td><td class="num">5</td></tr>
+    <tr><td><span class="badge medium">Medium</span></td><td>Works today but wrong under realistic conditions, or misleading design</td><td class="num">10</td></tr>
+    <tr><td><span class="badge low">Low</span></td><td>Code smell, duplication, drift, hygiene</td><td class="num">17</td></tr>
+  </tbody>
+</table>
+
+<h3 style="margin-top:22px">Codebase size (C#, Razor, SQL; excluding build output)</h3>
+<table aria-label="Lines of code per project">
+  <thead><tr><th>Area</th><th class="num">Lines</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>Domain</td><td class="num">354</td><td>4 entities, guard-clause constructors</td></tr>
+    <tr><td>Application</td><td class="num">668</td><td>22 handlers, DTOs, requests, repository interfaces</td></tr>
+    <tr><td>Infrastructure</td><td class="num">467</td><td>4 Dapper repositories, unit of work</td></tr>
+    <tr><td>Catalog API + Songs API</td><td class="num">480</td><td>Minimal API endpoints, Serilog bootstrap</td></tr>
+    <tr><td>Gateway</td><td class="num">199</td><td>YARP, downstream health probes</td></tr>
+    <tr><td>Web (Blazor)</td><td class="num">1191</td><td>5 pages, typed gateway client</td></tr>
+    <tr><td>ServiceDefaults, AppHost, DbMigrations</td><td class="num">343</td><td>Aspire wiring, DbUp</td></tr>
+    <tr><td>Tests</td><td class="num">2204</td><td>47 unit, 39 repository, 30 integration</td></tr>
+    <tr><td>SQL</td><td class="num">362</td><td>schema, seed, parity check, songs role</td></tr>
+  </tbody>
+</table>
+
+<div class="toc" style="margin-top:22px">
+  <strong>Contents</strong>
+  <ol>
+    <li><a href="#high">High severity</a></li>
+    <li><a href="#medium">Medium severity</a></li>
+    <li><a href="#low">Low severity and smells</a></li>
+    <li><a href="#good">What is in good shape</a></li>
+    <li><a href="#order">Suggested fix order</a></li>
+  </ol>
+</div>
+
+<h2 id="high">High severity</h2>
+
+<div class="finding high" id="h1">
+  <div class="head"><span class="id">H1</span><span class="badge high">High</span><h3>Catalog API no longer calls <code>AddServiceDefaults()</code></h3></div>
+  <div class="where"><code>src/MusicStore.Api/Program.cs:9-20</code></div>
+  <dl>
+    <dt>What</dt><dd>Commit <code>b0b7678</code> (MIG-35, Serilog) replaced the line <code>builder.AddServiceDefaults();</code> with the Serilog bootstrap. The new comment still says Serilog "coexists with the OTel exporter from ServiceDefaults", but that exporter is no longer registered. The Songs API, Gateway, Web and DbMigrations all still call it.</dd>
+    <dt>Impact</dt><dd>The catalog service exports no OpenTelemetry traces or metrics to the Aspire dashboard, has no "self" liveness check, and gets none of the HttpClient resilience and service-discovery defaults. The claimed Npgsql span instrumentation is wired but never exported. The <code>/health</code> endpoint still works only because the Npgsql integration registers its own health check.</dd>
+    <dt>Fix</dt><dd>Re-add <code>builder.AddServiceDefaults();</code> before the Serilog call. Then see <a href="#m2">M2</a>, because Serilog will otherwise discard the OTel log provider that this call registers.</dd>
+  </dl>
+</div>
+
+<div class="finding high" id="h2">
+  <div class="head"><span class="id">H2</span><span class="badge high">High</span><h3>Album update validates artist and genre but never saves them</h3></div>
+  <div class="where"><code>src/MusicStore.Application/Albums/AlbumHandlers.cs:73-88</code>, <code>src/MusicStore.Infrastructure/Repositories/AlbumRepository.cs:70-74</code></div>
+  <dl>
+    <dt>What</dt><dd><code>UpdateAlbumHandler</code> looks up <code>request.ArtistId</code> and <code>request.GenreId</code> (two extra queries) and throws 422 if either is missing, then calls only <code>album.UpdateTitle(...)</code>. The repository runs <code>UPDATE album SET title = @title</code>. <code>Album</code> has no method to reassign its artist or genre.</dd>
+    <dt>Impact</dt><dd>The Albums page edit form lets the user pick a different artist or genre and reports success, but the change is silently discarded. The integration test passes because it sends the same ids back; the unit test asserts only the title.</dd>
+    <dt>Fix</dt><dd>Add <code>Album.Reassign(int artistId, int genreId)</code> (or fold it into an <code>Update</code> method), call it from the handler, and extend the SQL to <code>SET artist_id = @artistId, genre_id = @genreId, title = @title</code>. Add a unit test asserting the new ids and an integration test that changes them.</dd>
+  </dl>
+</div>
+
+<div class="finding high" id="h3">
+  <div class="head"><span class="id">H3</span><span class="badge high">High</span><h3>Domain guard exceptions surface as HTTP 500 instead of 422</h3></div>
+  <div class="where"><code>src/MusicStore.ServiceDefaults/ErrorHandling/MusicStoreExceptionHandler.cs:28-33</code>, all Create/Update handlers</div>
+  <dl>
+    <dt>What</dt><dd>Entities validate input with <code>ArgumentException</code> and <code>ArgumentOutOfRangeException</code>. The exception handler maps only <code>NotFoundException</code> and <code>ValidationException</code>; everything else becomes 500 "An unexpected error occurred" and is logged as an error. Only <code>CreateArtistHandler</code> (blank name) and <code>CreateSongHandler</code> (non-positive duration) pre-validate.</dd>
+    <dt>Impact</dt><dd>These client mistakes return 500 even though every endpoint advertises 422 via <code>ProducesProblem</code>: blank genre name or description, album title or artist name over 100 characters, song name over 50 characters, blank name on any PUT, non-positive duration on PUT /songs. The UI then shows the generic error text and the ops log fills with false alarms.</dd>
+    <dt>Fix</dt><dd>Either validate request records up front in one place (a small validator per request, or DataAnnotations plus an endpoint filter) and throw <code>ValidationException</code>, or have the handlers catch <code>ArgumentException</code> from entity construction and rethrow as <code>ValidationException</code>. Keep the domain guards as the last line of defense. Add integration tests for the over-length and blank cases.</dd>
+  </dl>
+</div>
+
+<div class="finding high" id="h4">
+  <div class="head"><span class="id">H4</span><span class="badge high">High</span><h3>Album detail page reads artist and genre names from an endpoint that does not return them</h3></div>
+  <div class="where"><code>src/MusicStore.Web/Services/CatalogApiClient.cs:56</code>, <code>src/MusicStore.Web/CatalogModels.cs:12</code>, <code>src/MusicStore.Web/Components/Pages/AlbumDetail.razor:30-32</code></div>
+  <dl>
+    <dt>What</dt><dd>The Web project has a single <code>AlbumDto</code> with non-nullable <code>ArtistName</code> and <code>GenreName</code>. <code>GetAlbumAsync</code> calls <code>GET /catalog/albums/{id}</code>, which returns the flat API DTO (id, artistId, genreId, title). Deserialization leaves both names null despite the non-nullable annotations.</dd>
+    <dt>Impact</dt><dd>The album detail header renders as "by  · Genre: " with empty values on every album. The UI smoke test only asserts the route returns 200.</dd>
+    <dt>Fix</dt><dd>Add <code>GET /albums/{id}/with-details</code> to the catalog API (the multi-mapping query already exists for the list) and use it from the detail page, or split the Web DTOs into <code>AlbumDto</code> and <code>AlbumDetailsDto</code> matching the API so the compiler flags the mismatch.</dd>
+  </dl>
+</div>
+
+<div class="finding high" id="h5">
+  <div class="head"><span class="id">H5</span><span class="badge high">High</span><h3>Integration tests are not in the solution, so CI never builds or runs them</h3></div>
+  <div class="where"><code>MusicStore.slnx:14-17</code>, <code>.github/workflows/ci.yml:30-33</code></div>
+  <dl>
+    <dt>What</dt><dd>The solution's <code>/tests/</code> folder lists only <code>Application.UnitTests</code> and <code>Infrastructure.Tests</code>. CI runs <code>dotnet build</code> and <code>dotnet test</code> against <code>MusicStore.slnx</code>, so <code>MusicStore.IntegrationTests</code> (30 tests, the only coverage of the gateway, YARP routing, ProblemDetails over HTTP and the UI) is never compiled on CI. The README states all three suites run.</dd>
+    <dt>Impact</dt><dd>End-to-end regressions (for example <a href="#h2">H2</a> or a broken gateway route) pass CI. The project can also stop compiling without anyone noticing.</dd>
+    <dt>Fix</dt><dd>Add the project to <code>MusicStore.slnx</code>. CI's <code>ubuntu-latest</code> runner has Docker, which Aspire testing needs; if the run time is a concern, gate it to pull requests only or run it as a separate job.</dd>
+  </dl>
+</div>
+
+<h2 id="medium">Medium severity</h2>
+
+<div class="finding medium" id="m1">
+  <div class="head"><span class="id">M1</span><span class="badge medium">Medium</span><h3>Request-completion log lines have an empty correlation id</h3></div>
+  <div class="where"><code>src/MusicStore.Api/Program.cs:54-65</code>, <code>src/MusicStore.Songs.Api/Program.cs:55-66</code></div>
+  <dl>
+    <dt>What</dt><dd><code>app.UseSerilogRequestLogging()</code> is registered before the middleware that pushes <code>CorrelationId</code> into <code>LogContext</code>. Serilog writes its completion line after the downstream pipeline returns, by which point the pushed property has been disposed.</dd>
+    <dt>Evidence</dt><dd>In today's <code>src/MusicStore.Api/logs</code> file, 91 of 404 lines (every "HTTP ... responded" line) end in <code>(correlation: )</code>, while handler and repository lines carry the id. The Songs API log shows the same pattern (32 lines).</dd>
+    <dt>Fix</dt><dd>Register the correlation middleware before <code>UseSerilogRequestLogging()</code>, or set the property through <code>options.EnrichDiagnosticContext</code> so the completion event carries it regardless of order.</dd>
+  </dl>
+</div>
+
+<div class="finding medium" id="m2">
+  <div class="head"><span class="id">M2</span><span class="badge medium">Medium</span><h3><code>UseSerilog</code> discards the OpenTelemetry log provider</h3></div>
+  <div class="where"><code>src/MusicStore.Songs.Api/Program.cs:18-22</code> (and the catalog API once <a href="#h1">H1</a> is fixed)</div>
+  <dl>
+    <dt>What</dt><dd><code>AddServiceDefaults()</code> registers <code>builder.Logging.AddOpenTelemetry(...)</code> so logs reach the Aspire dashboard. <code>UseSerilog(...)</code> with the default <code>writeToProviders: false</code> replaces the logger factory and ignores the other providers.</dd>
+    <dt>Impact</dt><dd>The dashboard's Structured Logs view shows nothing from the APIs; only console and files receive logs. The MIG-35 commit message describes coexistence that does not happen.</dd>
+    <dt>Fix</dt><dd>Pass <code>writeToProviders: true</code>, or add <code>Serilog.Sinks.OpenTelemetry</code> and point it at <code>OTEL_EXPORTER_OTLP_ENDPOINT</code>.</dd>
+  </dl>
+</div>
+
+<div class="finding medium" id="m3">
+  <div class="head"><span class="id">M3</span><span class="badge medium">Medium</span><h3>APIs start before the database migrations have run</h3></div>
+  <div class="where"><code>src/MusicStore.AppHost/AppHost.cs:9-24</code></div>
+  <dl>
+    <dt>What</dt><dd>The <code>migrations</code> resource applies the schema and seed, but <code>catalog</code> and <code>songs</code> only <code>.WaitFor(database)</code>. Nothing waits for the migration run to complete. The Npgsql health check only verifies connectivity, so the gateway reports both APIs healthy while the tables may not exist yet.</dd>
+    <dt>Impact</dt><dd>On a fresh volume the first requests can fail with "relation album does not exist" until DbUp finishes. The integration fixture is exposed to the same race.</dd>
+    <dt>Fix</dt><dd>Hold a reference to the migrations resource and add <code>.WaitForCompletion(migrations)</code> to both APIs.</dd>
+  </dl>
+</div>
+
+<div class="finding medium" id="m4">
+  <div class="head"><span class="id">M4</span><span class="badge medium">Medium</span><h3>Least-privilege songs role is never used and its password is committed</h3></div>
+  <div class="where"><code>db/300_songs_role.sql:9</code>, <code>src/MusicStore.AppHost/AppHost.cs:21-24</code>, <code>src/MusicStore.Songs.Api/Program.cs:26</code></div>
+  <dl>
+    <dt>What</dt><dd>The script creates <code>musicstore_songs</code> with the literal password <code>musicstore_songs</code>. The AppHost hands the Songs API the same owner connection string as the catalog (<code>WithReference(database)</code>), and the Program.cs comment claims the service connects with the restricted role.</dd>
+    <dt>Impact</dt><dd>A security control that exists on paper but not in practice, plus a plaintext credential in version control that will be flagged by any secret scanner.</dd>
+    <dt>Fix</dt><dd>Either wire the role for real (an AppHost parameter for the password, a connection string built from it, and the <code>GRANT</code>s kept) or delete the script and the comment. Do not keep both states.</dd>
+  </dl>
+</div>
+
+<div class="finding medium" id="m5">
+  <div class="head"><span class="id">M5</span><span class="badge medium">Medium</span><h3>Repositories throw <code>KeyNotFoundException</code>, which maps to 500</h3></div>
+  <div class="where"><code>src/MusicStore.Infrastructure/Repositories/*.cs</code>, every <code>UpdateAsync</code> and <code>DeleteAsync</code></div>
+  <dl>
+    <dt>What</dt><dd>When zero rows are affected the repositories throw the BCL <code>KeyNotFoundException</code>. The handler loads the entity first, so this only happens if the row disappears between the read and the write, but when it does the exception handler returns 500 rather than 404.</dd>
+    <dt>Fix</dt><dd>Throw the Application layer's <code>NotFoundException</code> (Infrastructure already references Application), or return the affected count and let the handler decide.</dd>
+  </dl>
+</div>
+
+<div class="finding medium" id="m6">
+  <div class="head"><span class="id">M6</span><span class="badge medium">Medium</span><h3>Dapper calls ignore the cancellation token</h3></div>
+  <div class="where">all four repositories</div>
+  <dl>
+    <dt>What</dt><dd>The token is passed to <code>OpenConnectionAsync</code> only. The query calls use the string overloads, which take no token. A client disconnect or a resilience timeout cannot cancel the running statement.</dd>
+    <dt>Fix</dt><dd>Wrap each call in <code>new CommandDefinition(sql, parameters, cancellationToken: cancellationToken)</code>.</dd>
+  </dl>
+</div>
+
+<div class="finding medium" id="m7">
+  <div class="head"><span class="id">M7</span><span class="badge medium">Medium</span><h3>Unit of work is registered, tested, and unusable</h3></div>
+  <div class="where"><code>src/MusicStore.Infrastructure/UnitOfWork/NpgsqlUnitOfWork.cs</code>, <code>src/MusicStore.Application/Interfaces/IUnitOfWork.cs</code>, <code>DependencyInjection.cs:38</code></div>
+  <dl>
+    <dt>What</dt><dd>No handler injects <code>IUnitOfWork</code>. More importantly, every repository opens its own connection from the data source, so even if a handler began a transaction the repository calls could not enlist in it. The abstraction promises a transaction boundary that the rest of the design cannot honor.</dd>
+    <dt>Fix</dt><dd>Decide: either make repositories accept a connection/transaction (or resolve one from the scoped unit of work) and use it where multi-step writes exist, or delete the unit of work and its six tests. Today it is dead code with a misleading contract.</dd>
+  </dl>
+</div>
+
+<div class="finding medium" id="m8">
+  <div class="head"><span class="id">M8</span><span class="badge medium">Medium</span><h3>Blazor pages load their data twice per navigation</h3></div>
+  <div class="where"><code>src/MusicStore.Web/Components/App.razor:14</code>, every page's <code>OnInitializedAsync</code></div>
+  <dl>
+    <dt>What</dt><dd><code>Routes</code> uses <code>InteractiveServer</code> with prerendering enabled (the default). <code>OnInitializedAsync</code> therefore runs once during server prerender and again when the circuit connects, so each visit to Albums issues six gateway calls instead of three.</dd>
+    <dt>Fix</dt><dd>Persist the prerendered state with <code>PersistentComponentState</code> (or the <code>[PersistentState]</code> attribute already used in <code>Error.razor</code>), or disable prerendering with <code>new InteractiveServerRenderMode(prerender: false)</code>.</dd>
+  </dl>
+</div>
+
+<div class="finding medium" id="m9">
+  <div class="head"><span class="id">M9</span><span class="badge medium">Medium</span><h3>Repository tests start one PostgreSQL container per test class</h3></div>
+  <div class="where"><code>tests/MusicStore.Infrastructure.Tests/PostgresFixture.cs</code>, five test classes using <code>IClassFixture&lt;PostgresFixture&gt;</code></div>
+  <dl>
+    <dt>What</dt><dd>The fixture's comment says "one container, many databases", but <code>IClassFixture</code> creates a fixture (and container) per class. Five containers start in sequence; the "own database per class" isolation it describes is not implemented either (all classes run against the default database).</dd>
+    <dt>Fix</dt><dd>Use a collection fixture (as the integration tests already do) and, if isolation matters, create a database per class from the shared container.</dd>
+  </dl>
+</div>
+
+<div class="finding medium" id="m10">
+  <div class="head"><span class="id">M10</span><span class="badge medium">Medium</span><h3>Public songs URL is <code>/songs/songs/...</code></h3></div>
+  <div class="where"><code>src/MusicStore.Gateway/appsettings.json:20-26</code>, <code>src/MusicStore.Songs.Api/Endpoints/SongEndpoints.cs:18</code></div>
+  <dl>
+    <dt>What</dt><dd>The gateway strips the <code>/songs</code> prefix and the Songs API then maps its group at <code>/songs</code>, so clients call <code>/songs/songs?albumId=1</code> and <code>/songs/songs/{id}</code>. The README describes the route as <code>/songs/**</code> → songs API, which hides the doubled segment. The catalog side (<code>/catalog/artists</code>) does not have this problem.</dd>
+    <dt>Fix</dt><dd>Map the Songs API group at the root, or keep the prefix in the gateway and drop the <code>PathRemovePrefix</code> transform. Update the Web client, the integration tests and the README together.</dd>
+  </dl>
+</div>
+
+<h2 id="low">Low severity and smells</h2>
+
+<div class="finding low" id="l1">
+  <div class="head"><span class="id">L1</span><span class="badge low">Low</span><h3>Hosting code is copy-pasted between the two APIs</h3></div>
+  <div class="where"><code>src/MusicStore.Api/Program.cs</code>, <code>src/MusicStore.Songs.Api/Program.cs</code></div>
+  <p>The Serilog bootstrap, correlation middleware, HttpLogging options, Scalar/OpenAPI mapping and root endpoint are identical in both files, and the two <code>appsettings.json</code> Serilog sections differ only by file name. <a href="#h1">H1</a> is the kind of drift this invites. Move them into ServiceDefaults as <code>AddMusicStoreLogging()</code> / <code>UseMusicStoreRequestPipeline()</code>.</p>
+</div>
+
+<div class="finding low" id="l2">
+  <div class="head"><span class="id">L2</span><span class="badge low">Low</span><h3>Every request is logged three times</h3></div>
+  <p>ASP.NET Core HttpLogging (request and response headers), Serilog request logging, and OpenTelemetry ASP.NET Core instrumentation all run on each request. Pick one text log of requests; keep OTel for traces.</p>
+</div>
+
+<div class="finding low" id="l3">
+  <div class="head"><span class="id">L3</span><span class="badge low">Low</span><h3>Namespaces do not match their projects</h3></div>
+  <div class="where"><code>src/MusicStore.Songs.Api/Endpoints/SongEndpoints.cs:1</code>, <code>src/MusicStore.ServiceDefaults/ErrorHandling/*.cs:1</code></div>
+  <p>The Songs API endpoints live in <code>MusicStore.Api.Endpoints</code>, and the ServiceDefaults error handling in <code>MusicStore.Api.ErrorHandling</code>. Both are leftovers from the MIG-21 extraction.</p>
+</div>
+
+<div class="finding low" id="l4">
+  <div class="head"><span class="id">L4</span><span class="badge low">Low</span><h3>Layering: ServiceDefaults depends on the Application layer</h3></div>
+  <div class="where"><code>src/MusicStore.ServiceDefaults/MusicStore.ServiceDefaults.csproj:13</code>, <code>src/MusicStore.AppHost/MusicStore.AppHost.csproj:17-18</code></div>
+  <p>The shared hosting project references Application so the exception handler can see <code>NotFoundException</code>. That drags the Application layer into the Gateway and Web, which do not need it. A small marker interface (for example <code>IHttpStatusException</code>) in ServiceDefaults, implemented by the Application exceptions, would invert the dependency. The AppHost also references <code>MusicStore.Api</code> and ServiceDefaults while using path-based <code>AddDotnetProject</code>, so those references do nothing.</p>
+</div>
+
+<div class="finding low" id="l5">
+  <div class="head"><span class="id">L5</span><span class="badge low">Low</span><h3>Domain navigation collections are never populated</h3></div>
+  <div class="where"><code>src/MusicStore.Domain/Album.cs</code>, <code>Artist.cs</code>, <code>Genre.cs</code>, <code>Song.cs</code></div>
+  <p><code>Artist.Albums</code>, <code>Genre.Albums</code> and <code>Album.Songs</code> are always empty because Dapper never fills them, and the constructors that wire them (<code>Album(Artist, Genre, string)</code>, <code>Song(Album, string, TimeSpan)</code>) are unused outside the Domain project. <code>Album</code> has five constructors, including <code>(int, int, string)</code> next to <code>(int, int, int, string)</code>, which is easy to call with the arguments shifted. Remove the collections and entity-wiring constructors, or load them for real.</p>
+</div>
+
+<div class="finding low" id="l6">
+  <div class="head"><span class="id">L6</span><span class="badge low">Low</span><h3>Guard logic repeated across entities</h3></div>
+  <p><code>SetName</code>, <code>SetTitle</code>, <code>SetDescription</code> each repeat the same null/whitespace and max-length check with a different message. A single <code>Guard.Text(value, max, paramName)</code> helper removes five copies.</p>
+</div>
+
+<div class="finding low" id="l7">
+  <div class="head"><span class="id">L7</span><span class="badge low">Low</span><h3>Global Dapper setting mutated during DI registration</h3></div>
+  <div class="where"><code>src/MusicStore.Infrastructure/DependencyInjection.cs:29</code></div>
+  <p><code>DefaultTypeMap.MatchNamesWithUnderscores = true</code> is process-wide static state set from an extension method. Every query already aliases its columns, so the setting is also redundant. Remove it, or set it once in a module initializer with a comment.</p>
+</div>
+
+<div class="finding low" id="l8">
+  <div class="head"><span class="id">L8</span><span class="badge low">Low</span><h3>Unbounded list endpoints</h3></div>
+  <p><code>GET /artists</code>, <code>/genres</code>, <code>/albums</code>, <code>/albums/with-details</code>, <code>/songs</code> return every row with no paging or limit. Fine for the seed data, not for a real catalog.</p>
+</div>
+
+<div class="finding low" id="l9">
+  <div class="head"><span class="id">L9</span><span class="badge low">Low</span><h3>Foreign keys verified with extra queries instead of the database</h3></div>
+  <div class="where"><code>CreateAlbumHandler</code>, <code>UpdateAlbumHandler</code>, <code>CreateSongHandler</code></div>
+  <p>Creating an album costs three round trips and still has a window where the artist can be deleted between check and insert. Catching Npgsql's <code>23503</code> (foreign key violation) and mapping it to 422 is one round trip and race-free.</p>
+</div>
+
+<div class="finding low" id="l10">
+  <div class="head"><span class="id">L10</span><span class="badge low">Low</span><h3>Song duration display and parsing edge cases</h3></div>
+  <div class="where"><code>src/MusicStore.Web/Components/Pages/AlbumDetail.razor:58,146,167</code>, <code>src/MusicStore.Songs.Api/Endpoints/SongEndpoints.cs:10</code></div>
+  <ul>
+    <li>The table formats with <code>mm\:ss</code>, so a 1:14:30 track displays as 14:30.</li>
+    <li><code>TimeSpan.TryParse("3:30")</code> yields three hours thirty minutes; the label says hh:mm:ss but users will type m:ss.</li>
+    <li>The endpoint comment says duration is serialized as an ISO-8601 duration; System.Text.Json uses the constant <code>c</code> format (<code>hh:mm:ss</code>).</li>
+  </ul>
+</div>
+
+<div class="finding low" id="l11">
+  <div class="head"><span class="id">L11</span><span class="badge low">Low</span><h3>Page cancellation token never cancelled; timeouts crash the circuit</h3></div>
+  <div class="where">all four data pages, <code>LoadAsync</code> / <code>Dispose</code></div>
+  <p><code>loadCts</code> is disposed but never cancelled, so in-flight requests continue after navigation. The catch blocks handle only <code>CatalogApiException</code> and <code>HttpRequestException</code>; a <code>TaskCanceledException</code> from the resilience handler's timeout escapes and shows the "An unhandled error has occurred" banner. Add <code>catch (OperationCanceledException)</code> and cancel in <code>Dispose</code>.</p>
+</div>
+
+<div class="finding low" id="l12">
+  <div class="head"><span class="id">L12</span><span class="badge low">Low</span><h3>Deletes have no confirmation</h3></div>
+  <p>Deleting an artist cascades to its albums and their songs (<code>ON DELETE CASCADE</code>) with a single click and no confirmation step.</p>
+</div>
+
+<div class="finding low" id="l13">
+  <div class="head"><span class="id">L13</span><span class="badge low">Low</span><h3>HTTPS redirection with an HTTP-only endpoint</h3></div>
+  <div class="where"><code>src/MusicStore.Web/Program.cs:34</code>, <code>src/MusicStore.AppHost/AppHost.cs:40</code></div>
+  <p>The AppHost gives <code>web</code> only <code>WithHttpEndpoint()</code>, but Program.cs keeps <code>UseHttpsRedirection()</code>. ASP.NET Core logs "Failed to determine the https port for redirect" on every request (visible in the <code>.coda/tmp</code> web logs). Drop the call or add an HTTPS endpoint.</p>
+</div>
+
+<div class="finding low" id="l14">
+  <div class="head"><span class="id">L14</span><span class="badge low">Low</span><h3>Health endpoints exist only in Development</h3></div>
+  <div class="where"><code>src/MusicStore.ServiceDefaults/Extensions.cs:107-121</code></div>
+  <p>The Aspire template default maps <code>/health</code> and <code>/alive</code> only when <code>IsDevelopment()</code>. Outside Development the gateway's downstream probes get 404 and report Degraded, and orchestrators have no readiness probe. Decide deliberately: map them always with a port or auth restriction, or document that production readiness is handled elsewhere.</p>
+</div>
+
+<div class="finding low" id="l15">
+  <div class="head"><span class="id">L15</span><span class="badge low">Low</span><h3>Package version drift and repeated project properties</h3></div>
+  <p>Aspire.Npgsql 9.5.2 sits next to Aspire.Hosting 17.0.0; the three test projects use xunit 2.9.3, xunit.v3 3.1.0 and Microsoft.NET.Test.Sdk 18.0.0 / 17.14.1 / 17.12.0. <code>TargetFramework</code>, <code>Nullable</code> and <code>ImplicitUsings</code> are repeated in every csproj although <code>Directory.Build.props</code> already sets them. Adopt Central Package Management (<code>Directory.Packages.props</code>) and delete the repeated properties.</p>
+</div>
+
+<div class="finding low" id="l16">
+  <div class="head"><span class="id">L16</span><span class="badge low">Low</span><h3>DbMigrations builds a host it never runs</h3></div>
+  <div class="where"><code>src/MusicStore.DbMigrations/Program.cs:6-15</code></div>
+  <p><code>Host.CreateApplicationBuilder</code> is used only to read configuration; <code>AddServiceDefaults()</code> registers OpenTelemetry and health checks into a host that is never built, so the migration run emits no telemetry. Either build and run the host (DbUp inside an <code>IHostedService</code>) or drop the ServiceDefaults call and read configuration directly.</p>
+</div>
+
+<div class="finding low" id="l17">
+  <div class="head"><span class="id">L17</span><span class="badge low">Low</span><h3>Comment and documentation drift</h3></div>
+  <ul>
+    <li><code>db/100_seed.sql</code> header says 3 artists and 3 genres; it inserts 4 of each.</li>
+    <li><code>src/MusicStore.AppHost/AppHost.cs:26-33</code> contains the same four-line comment twice.</li>
+    <li>The catalog <code>Program.cs</code> describes an OTel exporter that is not registered (<a href="#h1">H1</a>); the Songs <code>Program.cs</code> describes a database role that is not used (<a href="#m4">M4</a>).</li>
+    <li>404 responses are logged at Warning with the full exception, so every miss writes a stack trace. Log the message only, or at Information.</li>
+    <li>No authentication, authorization or rate limiting exists on the gateway or the APIs. The legacy service had none either, but it should be a recorded decision rather than an omission.</li>
+  </ul>
+</div>
+
+<h2 id="good">What is in good shape</h2>
+<ul class="good-list">
+  <li><span class="badge good">Good</span> Parameterized SQL everywhere; no string concatenation into queries anywhere in the four repositories.</li>
+  <li><span class="badge good">Good</span> RFC 9457 ProblemDetails with distinct 404/422 mapping and no exception details on 500s, fixing the legacy <code>includeExceptionDetailInFaults</code> leak.</li>
+  <li><span class="badge good">Good</span> Domain invariants enforced in constructors with private setters; DTOs are records; handlers are small, sealed and stateless.</li>
+  <li><span class="badge good">Good</span> <code>TreatWarningsAsErrors</code> and <code>EnforceCodeStyleInBuild</code> on for every project; CI builds in Release with zero warnings.</li>
+  <li><span class="badge good">Good</span> Vulnerable transitive packages pinned with the advisory id noted in the csproj comment.</li>
+  <li><span class="badge good">Good</span> Schema parity script (<code>db/200</code>) asserts types, FK rules, nullability and indexes against the legacy model, and runs under DbUp's journal.</li>
+  <li><span class="badge good">Good</span> Repository tests run against the real DDL in a PostgreSQL container; integration tests boot the whole Aspire graph and go through the gateway.</li>
+  <li><span class="badge good">Good</span> Build output, IDE state, logs and local Aspire state are all gitignored; the tree is clean.</li>
+</ul>
+
+<h2 id="order">Suggested fix order</h2>
+<ol>
+  <li><a href="#h1">H1</a> and <a href="#m2">M2</a> together: restore <code>AddServiceDefaults()</code> in the catalog API and let Serilog write to providers. One small PR, immediate observability win.</li>
+  <li><a href="#h5">H5</a>: add the integration tests to the solution so the remaining fixes are protected by CI.</li>
+  <li><a href="#h2">H2</a> and <a href="#h4">H4</a>: the two user-visible data bugs (album reassignment and empty detail header), each with a new integration test.</li>
+  <li><a href="#h3">H3</a> plus <a href="#m5">M5</a>: one validation pass so every client error is a 422 and every missing row a 404.</li>
+  <li><a href="#m1">M1</a>, <a href="#m3">M3</a>, <a href="#m4">M4</a>: logging order, migration wait, and a decision on the songs role.</li>
+  <li><a href="#l1">L1</a> and <a href="#m10">M10</a> when touching the APIs next: consolidate hosting code into ServiceDefaults and fix the songs URL shape.</li>
+  <li>The remaining Medium and Low items as routine cleanup.</li>
+</ol>
+
+<p class="meta" style="margin-top:36px">Method: full read of every C#, Razor, SQL, csproj, JSON config and workflow file in the repository; cross-checks with <code>git log -S</code> for the regressions, and with the Serilog output in <code>src/*/logs</code> for the correlation-id finding. No code was changed.</p>
+</main>
+</body>
+</html>

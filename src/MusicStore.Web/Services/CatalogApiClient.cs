@@ -53,7 +53,7 @@ public sealed class CatalogApiClient(HttpClient httpClient)
         => await GetListAsync<AlbumDto>("/catalog/albums", cancellationToken);
 
     public async Task<AlbumDto> GetAlbumAsync(int id, CancellationToken cancellationToken = default)
-        => await GetSingleAsync<AlbumDto>($"/catalog/albums/{id}", cancellationToken);
+        => await GetSingleAsync<AlbumDto>($"/catalog/albums/{id}/with-details", cancellationToken);
 
     public async Task<AlbumDto> CreateAlbumAsync(int artistId, int genreId, string title, CancellationToken cancellationToken = default)
         => await SendForJsonAsync<AlbumDto>(HttpMethod.Post, "/catalog/albums", new { artistId, genreId, title }, cancellationToken);

@@ -16,6 +16,12 @@ public interface IAlbumRepository
     /// </summary>
     Task<IReadOnlyList<Album>> GetAllWithArtistAndGenreAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Loads a single album with its <see cref="Album.Artist"/> and <see cref="Album.Genre"/> populated
+    /// (review H4: single-album variant of the multi-mapping read path).
+    /// </summary>
+    Task<Album?> GetByIdWithArtistAndGenreAsync(int id, CancellationToken cancellationToken = default);
+
     Task<Album?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
     Task<Album> AddAsync(Album album, CancellationToken cancellationToken = default);

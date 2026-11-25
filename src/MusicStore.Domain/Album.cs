@@ -117,6 +117,23 @@ public class Album : Entity
 
     public void UpdateTitle(string title) => SetTitle(title);
 
+    /// <summary>Reassigns the album to a different artist and/or genre (review H2).</summary>
+    public void Reassign(int artistId, int genreId)
+    {
+        if (artistId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(artistId), "Artist id must be positive.");
+        }
+
+        if (genreId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(genreId), "Genre id must be positive.");
+        }
+
+        this.ArtistId = artistId;
+        this.GenreId = genreId;
+    }
+
     private void SetTitle(string title)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(title);

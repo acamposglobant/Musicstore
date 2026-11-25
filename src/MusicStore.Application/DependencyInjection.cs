@@ -32,6 +32,7 @@ public static class DependencyInjection
         services.AddScoped<GetAlbumsHandler>();
         services.AddScoped<GetAlbumsWithDetailsHandler>();
         services.AddScoped<GetAlbumByIdHandler>();
+        services.AddScoped<GetAlbumWithDetailsHandler>();
         services.AddScoped<CreateAlbumHandler>();
         services.AddScoped<UpdateAlbumHandler>();
         services.AddScoped<DeleteAlbumHandler>();
