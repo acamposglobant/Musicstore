@@ -1,5 +1,6 @@
 namespace MusicStore.Infrastructure.Tests;
 
+using Microsoft.Extensions.Logging.Abstractions;
 using MusicStore.Domain;
 using MusicStore.Infrastructure.Repositories;
 using Xunit;
@@ -10,7 +11,7 @@ using Xunit;
 /// </summary>
 public sealed class ArtistRepositoryTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
-    private ArtistRepository CreateRepository() => new(fixture.DataSource);
+    private ArtistRepository CreateRepository() => new(fixture.DataSource, NullLogger<ArtistRepository>.Instance);
 
     [Fact]
     public async Task AddAsync_persists_and_returns_identity_id()

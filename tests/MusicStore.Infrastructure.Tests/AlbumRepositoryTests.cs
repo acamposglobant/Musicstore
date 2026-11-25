@@ -1,5 +1,6 @@
 namespace MusicStore.Infrastructure.Tests;
 
+using Microsoft.Extensions.Logging.Abstractions;
 using MusicStore.Domain;
 using MusicStore.Infrastructure.Repositories;
 using Xunit;
@@ -11,7 +12,7 @@ using Xunit;
 /// </summary>
 public sealed class AlbumRepositoryTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
-    private AlbumRepository CreateRepository() => new(fixture.DataSource);
+    private AlbumRepository CreateRepository() => new(fixture.DataSource, NullLogger<AlbumRepository>.Instance);
 
     [Fact]
     public async Task AddAsync_persists_album_with_foreign_keys()
@@ -130,8 +131,8 @@ public sealed class AlbumRepositoryTests(PostgresFixture fixture) : IClassFixtur
 
     private async Task<(int ArtistId, int GenreId)> CreateArtistAndGenreAsync()
     {
-        var artist = await new ArtistRepository(fixture.DataSource).AddAsync(new Artist("Multi-Mapped Artist"), TestContext.Current.CancellationToken);
-        var genre = await new GenreRepository(fixture.DataSource).AddAsync(new Genre("Multi-Mapped Genre", "created by tests"), TestContext.Current.CancellationToken);
+        var artist = await new ArtistRepository(fixture.DataSource, NullLogger<ArtistRepository>.Instance).AddAsync(new Artist("Multi-Mapped Artist"), TestContext.Current.CancellationToken);
+        var genre = await new GenreRepository(fixture.DataSource, NullLogger<GenreRepository>.Instance).AddAsync(new Genre("Multi-Mapped Genre", "created by tests"), TestContext.Current.CancellationToken);
         return (artist.Id, genre.Id);
     }
 }

@@ -1,5 +1,6 @@
 namespace MusicStore.Infrastructure.Tests;
 
+using Microsoft.Extensions.Logging.Abstractions;
 using MusicStore.Domain;
 using MusicStore.Infrastructure.Repositories;
 using Xunit;
@@ -12,7 +13,7 @@ using Xunit;
 /// </summary>
 public sealed class SongRepositoryTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
-    private SongRepository CreateRepository() => new(fixture.DataSource);
+    private SongRepository CreateRepository() => new(fixture.DataSource, NullLogger<SongRepository>.Instance);
 
     [Fact]
     public async Task AddAsync_round_trips_duration_as_interval()
@@ -132,9 +133,9 @@ public sealed class SongRepositoryTests(PostgresFixture fixture) : IClassFixture
 
     private async Task<int> CreateAlbumAsync()
     {
-        var artist = await new ArtistRepository(fixture.DataSource).AddAsync(new Artist("Song Test Artist"), TestContext.Current.CancellationToken);
-        var genre = await new GenreRepository(fixture.DataSource).AddAsync(new Genre("Song Test Genre", "created by tests"), TestContext.Current.CancellationToken);
-        var album = await new AlbumRepository(fixture.DataSource).AddAsync(new Album(artist.Id, genre.Id, "Song Test Album"), TestContext.Current.CancellationToken);
+        var artist = await new ArtistRepository(fixture.DataSource, NullLogger<ArtistRepository>.Instance).AddAsync(new Artist("Song Test Artist"), TestContext.Current.CancellationToken);
+        var genre = await new GenreRepository(fixture.DataSource, NullLogger<GenreRepository>.Instance).AddAsync(new Genre("Song Test Genre", "created by tests"), TestContext.Current.CancellationToken);
+        var album = await new AlbumRepository(fixture.DataSource, NullLogger<AlbumRepository>.Instance).AddAsync(new Album(artist.Id, genre.Id, "Song Test Album"), TestContext.Current.CancellationToken);
         return album.Id;
     }
 }

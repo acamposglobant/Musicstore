@@ -66,12 +66,12 @@ A task is **Done** only when ALL of the following hold:
 | Metric | Value |
 |---|---|
 | **Total Tasks** | 36 |
-| **Not Started** | 2 |
+| **Not Started** | 0 |
 | **In Progress** | 0 |
 | **In Review** | 0 |
 | **Blocked** | 0 |
-| **Completed** | 34 |
-| **Completion %** | `▓▓▓▓▓▓▓▓▓░ 94%` |
+| **Completed** | 36 |
+| **Completion %** | `▓▓▓▓▓▓▓▓▓▓ 100%` |
 
 **Tasks by Phase**
 
@@ -85,7 +85,7 @@ A task is **Done** only when ALL of the following hold:
 | Phase 6: xUnit & Aspire Integration Testing | 4 | 4 |
 | Phase 7: Legacy Decommission | 3 | 3 |
 | Phase 8: Web UI (Blazor) | 4 | 4 |
-| Phase 9: Observability Enhancements | 2 | 0 |
+| Phase 9: Observability Enhancements | 2 | 2 |
 
 ---
 
@@ -134,8 +134,8 @@ A task is **Done** only when ALL of the following hold:
 | MIG-32 | Phase 8: Web UI (Blazor) | Catalog browse views | Components: Artists list, Genres list, Albums list (artist/genre names via enriched read path), Album detail with its songs (`GET /songs?albumId=`). Read-only. | Web UI (Blazor) | `MusicStore.UI.Silverlight/MainPage.xaml` (empty Grid — intended catalog browser) | M (4-8h) | Done | MIG-31, MIG-19 |
 | MIG-33 | Phase 8: Web UI (Blazor) | Catalog management (CRUD) views | Create/edit/delete forms for artists, genres, albums, songs; 422 ProblemDetails validation errors rendered inline; 404 → friendly not-found page. | Web UI (Blazor) | — (legacy UI never implemented CRUD) | M (4-8h) | Done | MIG-32 |
 | MIG-34 | Phase 8: Web UI (Blazor) | UI integration coverage | Extend Aspire integration tests: gateway → UI smoke (pages render, API consumed through gateway); OpenAPI contract stays source of truth. | Tests (xUnit) | — | S (2-4h) | Done | MIG-33, MIG-26 |
-| MIG-35 | Phase 9: Observability Enhancements | Serilog structured logging foundation | Add Serilog to both APIs (Serilog.AspNetCore): console + file sinks, enrichment (machine, correlation ids), `UseSerilogRequestLogging()`. Config via appsettings (no hardcoded paths). Coexists with OTel exporter. | API (Minimal APIs) | `MusicStore.Framework/WrapperLogger.cs` (NLog) | S (2-4h) | Not Started | MIG-20, MIG-21 |
-| MIG-36 | Phase 9: Observability Enhancements | End-to-end call tracing: endpoint → handler → repository | Correlation id per request flows from endpoint through handler to repository; every call logged with operation name + parameters (ids, request payloads; no sensitive data). Serilog `LogContext`/`BeginRequestScope` + `ILogger<T>` in handlers + repositories (log SQL statement + parameters at Debug). One log line per layer, same correlation id. | Application, Infrastructure (Dapper) | `BaseRepository` (no logging), `WrapperLogger` | M (4-8h) | Not Started | MIG-35 |
+| MIG-35 | Phase 9: Observability Enhancements | Serilog structured logging foundation | Add Serilog to both APIs (Serilog.AspNetCore): console + file sinks, enrichment (machine, correlation ids), `UseSerilogRequestLogging()`. Config via appsettings (no hardcoded paths). Coexists with OTel exporter. | API (Minimal APIs) | `MusicStore.Framework/WrapperLogger.cs` (NLog) | S (2-4h) | Done | MIG-20, MIG-21 |
+| MIG-36 | Phase 9: Observability Enhancements | End-to-end call tracing: endpoint → handler → repository | Correlation id per request flows from endpoint through handler to repository; every call logged with operation name + parameters (ids, request payloads; no sensitive data). Serilog `LogContext`/`BeginRequestScope` + `ILogger<T>` in handlers + repositories (log SQL statement + parameters at Debug). One log line per layer, same correlation id. | Application, Infrastructure (Dapper) | `BaseRepository` (no logging), `WrapperLogger` | M (4-8h) | Done | MIG-35 |
 
 ---
 

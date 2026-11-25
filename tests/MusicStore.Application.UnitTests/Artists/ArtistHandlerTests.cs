@@ -1,6 +1,7 @@
 namespace MusicStore.Application.UnitTests.Artists;
 
 using MusicStore.Application.Artists;
+using Microsoft.Extensions.Logging.Abstractions;
 using MusicStore.Application.Common;
 using MusicStore.Application.Interfaces;
 using MusicStore.Domain;
@@ -76,7 +77,7 @@ public sealed class CreateArtistHandlerTests
                 var artist = callInfo.Arg<Artist>();
                 return new Artist(99, artist.Name);
             });
-        var handler = new CreateArtistHandler(repository);
+        var handler = new CreateArtistHandler(repository, NullLogger<CreateArtistHandler>.Instance);
 
         var result = await handler.HandleAsync(new CreateArtistRequest("Artist One"));
 
@@ -89,7 +90,7 @@ public sealed class CreateArtistHandlerTests
         var repository = Substitute.For<IArtistRepository>();
         repository.AddAsync(Arg.Any<Artist>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => callInfo.Arg<Artist>());
-        var handler = new CreateArtistHandler(repository);
+        var handler = new CreateArtistHandler(repository, NullLogger<CreateArtistHandler>.Instance);
 
         _ = await handler.HandleAsync(new CreateArtistRequest("Artist One"));
 
@@ -106,7 +107,7 @@ public sealed class UpdateArtistHandlerTests
     {
         var repository = Substitute.For<IArtistRepository>();
         repository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(new Artist(1, "Artist One"));
-        var handler = new UpdateArtistHandler(repository);
+        var handler = new UpdateArtistHandler(repository, NullLogger<UpdateArtistHandler>.Instance);
 
         await handler.HandleAsync(1, new UpdateArtistRequest("Renamed"));
 
@@ -120,7 +121,7 @@ public sealed class UpdateArtistHandlerTests
     {
         var repository = Substitute.For<IArtistRepository>();
         repository.GetByIdAsync(99, Arg.Any<CancellationToken>()).ReturnsNull();
-        var handler = new UpdateArtistHandler(repository);
+        var handler = new UpdateArtistHandler(repository, NullLogger<UpdateArtistHandler>.Instance);
 
         await Assert.ThrowsAsync<NotFoundException>(
             () => handler.HandleAsync(99, new UpdateArtistRequest("Renamed")));
@@ -137,7 +138,7 @@ public sealed class DeleteArtistHandlerTests
         var repository = Substitute.For<IArtistRepository>();
         var artist = new Artist(1, "Artist One");
         repository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(artist);
-        var handler = new DeleteArtistHandler(repository);
+        var handler = new DeleteArtistHandler(repository, NullLogger<DeleteArtistHandler>.Instance);
 
         await handler.HandleAsync(1);
 
@@ -149,7 +150,7 @@ public sealed class DeleteArtistHandlerTests
     {
         var repository = Substitute.For<IArtistRepository>();
         repository.GetByIdAsync(99, Arg.Any<CancellationToken>()).ReturnsNull();
-        var handler = new DeleteArtistHandler(repository);
+        var handler = new DeleteArtistHandler(repository, NullLogger<DeleteArtistHandler>.Instance);
 
         await Assert.ThrowsAsync<NotFoundException>(() => handler.HandleAsync(99));
 

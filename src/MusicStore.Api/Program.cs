@@ -4,11 +4,19 @@ using MusicStore.Api.ErrorHandling;
 using MusicStore.Application;
 using MusicStore.Infrastructure;
 using Scalar.AspNetCore;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.AddServiceDefaults();
+// Serilog (MIG-35): structured logging with console + file sinks, enriched with
+// machine name and correlation id. Config lives in appsettings.json (Serilog
+// section) — no hardcoded paths. Coexists with the OTel exporter from
+// ServiceDefaults (traces/metrics) — Serilog owns the text logs.
+builder.Host.UseSerilog((context, services, configuration) => configuration
+    .ReadFrom.Configuration(context.Configuration)
+    .ReadFrom.Services(services)
+    .Enrich.FromLogContext()
+    .Enrich.WithMachineName());
 
 // PostgreSQL data access registered by Infrastructure: singleton NpgsqlDataSource
 // bound to the Aspire-injected connection string + Dapper snake_case conventions.
@@ -40,6 +48,21 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 app.UseMusicStoreErrorHandling();
+
+// Serilog request logging (MIG-35): one structured line per request. The
+// correlation id middleware below enriches it (and every downstream log line)
+// with a per-request CorrelationId via LogContext.
+app.UseSerilogRequestLogging();
+app.Use(async (context, next) =>
+{
+    var incoming = context.Request.Headers["CorrelationId"].ToString();
+    var correlationId = incoming.Length > 0 ? incoming : context.TraceIdentifier;
+    context.Response.Headers["CorrelationId"] = correlationId;
+    using (Serilog.Context.LogContext.PushProperty("CorrelationId", correlationId))
+    {
+        await next(context);
+    }
+});
 app.UseHttpLogging();
 
 if (app.Environment.IsDevelopment())

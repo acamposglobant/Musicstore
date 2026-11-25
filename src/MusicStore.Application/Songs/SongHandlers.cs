@@ -1,5 +1,6 @@
 namespace MusicStore.Application.Songs;
 
+using Microsoft.Extensions.Logging;
 using MusicStore.Application.Common;
 using MusicStore.Application.Interfaces;
 using MusicStore.Domain;
@@ -41,7 +42,8 @@ public sealed class GetSongByIdHandler(ISongRepository songRepository)
 /// </summary>
 public sealed class CreateSongHandler(
     ISongRepository songRepository,
-    IAlbumRepository albumRepository)
+    IAlbumRepository albumRepository,
+    ILogger<CreateSongHandler> logger)
 {
     public async Task<SongDto> HandleAsync(CreateSongRequest request, CancellationToken cancellationToken = default)
     {
@@ -51,6 +53,9 @@ public sealed class CreateSongHandler(
         {
             throw new ValidationException("Song duration must be positive.");
         }
+
+        // MIG-36: one line per handler call with operation + parameters.
+        logger.LogInformation("Handler CreateSong | AlbumId: {AlbumId} | Name: {Name} | Duration: {Duration}", request.AlbumId, request.Name, request.Duration);
 
         _ = await albumRepository.GetByIdAsync(request.AlbumId, cancellationToken)
             ?? throw new ValidationException($"Album {request.AlbumId} does not exist.");
@@ -62,10 +67,14 @@ public sealed class CreateSongHandler(
 }
 
 /// <summary>Updates an existing song. Throws <see cref="NotFoundException"/> when the song does not exist.</summary>
-public sealed class UpdateSongHandler(ISongRepository songRepository)
+public sealed class UpdateSongHandler(
+    ISongRepository songRepository,
+    ILogger<UpdateSongHandler> logger)
 {
     public async Task HandleAsync(int id, UpdateSongRequest request, CancellationToken cancellationToken = default)
     {
+        logger.LogInformation("Handler UpdateSong | Id: {Id} | Name: {Name} | Duration: {Duration}", id, request.Name, request.Duration);
+
         var song = await songRepository.GetByIdAsync(id, cancellationToken)
                    ?? throw new NotFoundException(nameof(Song), id);
 
@@ -75,10 +84,14 @@ public sealed class UpdateSongHandler(ISongRepository songRepository)
 }
 
 /// <summary>Deletes a song. Throws <see cref="NotFoundException"/> when the song does not exist.</summary>
-public sealed class DeleteSongHandler(ISongRepository songRepository)
+public sealed class DeleteSongHandler(
+    ISongRepository songRepository,
+    ILogger<DeleteSongHandler> logger)
 {
     public async Task HandleAsync(int id, CancellationToken cancellationToken = default)
     {
+        logger.LogInformation("Handler DeleteSong | Id: {Id}", id);
+
         var song = await songRepository.GetByIdAsync(id, cancellationToken)
                    ?? throw new NotFoundException(nameof(Song), id);
 

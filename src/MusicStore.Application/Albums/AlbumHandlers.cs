@@ -1,5 +1,6 @@
 namespace MusicStore.Application.Albums;
 
+using Microsoft.Extensions.Logging;
 using MusicStore.Application.Common;
 using MusicStore.Application.Interfaces;
 using MusicStore.Domain;
@@ -45,10 +46,14 @@ public sealed class GetAlbumByIdHandler(IAlbumRepository albumRepository)
 public sealed class CreateAlbumHandler(
     IAlbumRepository albumRepository,
     IArtistRepository artistRepository,
-    IGenreRepository genreRepository)
+    IGenreRepository genreRepository,
+    ILogger<CreateAlbumHandler> logger)
 {
     public async Task<AlbumDto> HandleAsync(CreateAlbumRequest request, CancellationToken cancellationToken = default)
     {
+        // MIG-36: one line per handler call with operation + parameters.
+        logger.LogInformation("Handler CreateAlbum | ArtistId: {ArtistId} | GenreId: {GenreId} | Title: {Title}", request.ArtistId, request.GenreId, request.Title);
+
         _ = await artistRepository.GetByIdAsync(request.ArtistId, cancellationToken)
             ?? throw new ValidationException($"Artist {request.ArtistId} does not exist.");
 
@@ -65,10 +70,13 @@ public sealed class CreateAlbumHandler(
 public sealed class UpdateAlbumHandler(
     IAlbumRepository albumRepository,
     IArtistRepository artistRepository,
-    IGenreRepository genreRepository)
+    IGenreRepository genreRepository,
+    ILogger<UpdateAlbumHandler> logger)
 {
     public async Task HandleAsync(int id, UpdateAlbumRequest request, CancellationToken cancellationToken = default)
     {
+        logger.LogInformation("Handler UpdateAlbum | Id: {Id} | ArtistId: {ArtistId} | GenreId: {GenreId} | Title: {Title}", id, request.ArtistId, request.GenreId, request.Title);
+
         var album = await albumRepository.GetByIdAsync(id, cancellationToken)
                     ?? throw new NotFoundException(nameof(Album), id);
 
@@ -84,10 +92,14 @@ public sealed class UpdateAlbumHandler(
 }
 
 /// <summary>Deletes an album (cascades to its songs). Throws <see cref="NotFoundException"/> when the album does not exist.</summary>
-public sealed class DeleteAlbumHandler(IAlbumRepository albumRepository)
+public sealed class DeleteAlbumHandler(
+    IAlbumRepository albumRepository,
+    ILogger<DeleteAlbumHandler> logger)
 {
     public async Task HandleAsync(int id, CancellationToken cancellationToken = default)
     {
+        logger.LogInformation("Handler DeleteAlbum | Id: {Id}", id);
+
         var album = await albumRepository.GetByIdAsync(id, cancellationToken)
                     ?? throw new NotFoundException(nameof(Album), id);
 

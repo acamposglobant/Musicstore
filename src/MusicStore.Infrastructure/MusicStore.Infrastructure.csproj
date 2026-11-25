@@ -9,6 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Aspire.Npgsql" Version="9.5.2" />
     <PackageReference Include="Dapper" Version="2.1.66" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
     <!-- Transitive of Aspire.Npgsql (via OpenTelemetry.Extensions.Hosting 1.9.0); pinned to patched version (GHSA-g94r-2vxg-569j) -->
     <PackageReference Include="OpenTelemetry.Api" Version="1.18.0" />
   </ItemGroup>
