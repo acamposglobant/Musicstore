@@ -45,6 +45,13 @@ public sealed class CreateSongHandler(
 {
     public async Task<SongDto> HandleAsync(CreateSongRequest request, CancellationToken cancellationToken = default)
     {
+        // Validate here (not the domain guard) so invalid input maps to 422
+        // ProblemDetails instead of an unexpected 500 (MIG-17 contract).
+        if (request.Duration <= TimeSpan.Zero)
+        {
+            throw new ValidationException("Song duration must be positive.");
+        }
+
         _ = await albumRepository.GetByIdAsync(request.AlbumId, cancellationToken)
             ?? throw new ValidationException($"Album {request.AlbumId} does not exist.");
 

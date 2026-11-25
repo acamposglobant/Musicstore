@@ -55,9 +55,9 @@ public sealed class MusicStoreExceptionHandler : IExceptionHandler
             Title = title,
             Type = status switch
             {
-                StatusCodes.Status404NotFound => "https://tools.ietf.org/html/rfc9457#section-15.5.5",
-                StatusCodes.Status422UnprocessableEntity => "https://tools.ietf.org/html/rfc9457#section-15.5.21",
-                _ => "https://tools.ietf.org/html/rfc9457#section-15.6.1",
+                StatusCodes.Status404NotFound => "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                StatusCodes.Status422UnprocessableEntity => "https://tools.ietf.org/html/rfc9110#section-15.5.21",
+                _ => "https://tools.ietf.org/html/rfc9110#section-15.6.1",
             },
         };
 
@@ -68,7 +68,11 @@ public sealed class MusicStoreExceptionHandler : IExceptionHandler
         }
 
         httpContext.Response.StatusCode = status;
-        await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
+        await httpContext.Response.WriteAsJsonAsync(
+            problemDetails,
+            options: null,
+            contentType: "application/problem+json",
+            cancellationToken);
         return true;
     }
 }

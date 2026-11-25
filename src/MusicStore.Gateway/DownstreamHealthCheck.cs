@@ -8,15 +8,21 @@ public sealed record DownstreamHealthCheckDescriptor(string ServiceName, string 
 /// <summary>Catalog API downstream probe configuration.</summary>
 public sealed class DownstreamHealthCheckCatalogDescriptor
 {
-    public string ServiceName => "catalog";
-    public string HttpClientName => "catalog-health";
+    public const string ServiceNameValue = "catalog";
+    public const string HttpClientNameValue = "catalog-health";
+
+    public string ServiceName => ServiceNameValue;
+    public string HttpClientName => HttpClientNameValue;
 }
 
 /// <summary>Songs API downstream probe configuration.</summary>
 public sealed class DownstreamHealthCheckSongsDescriptor
 {
-    public string ServiceName => "songs";
-    public string HttpClientName => "songs-health";
+    public const string ServiceNameValue = "songs";
+    public const string HttpClientNameValue = "songs-health";
+
+    public string ServiceName => ServiceNameValue;
+    public string HttpClientName => HttpClientNameValue;
 }
 
 /// <summary>
@@ -32,27 +38,13 @@ public sealed class DownstreamHealthCheck : IHealthCheck
     private readonly string httpClientName;
     private readonly ILogger logger;
 
+    // Single public constructor: multiple same-arity constructors make the type
+    // unresolvable by DI's default ActivatorUtilities (CS: "Multiple constructors").
     public DownstreamHealthCheck(
-        IHttpClientFactory httpClientFactory,
-        DownstreamHealthCheckCatalogDescriptor descriptor,
-        ILogger<DownstreamHealthCheck> logger)
-        : this(httpClientFactory, descriptor.ServiceName, descriptor.HttpClientName, logger)
-    {
-    }
-
-    public DownstreamHealthCheck(
-        IHttpClientFactory httpClientFactory,
-        DownstreamHealthCheckSongsDescriptor descriptor,
-        ILogger<DownstreamHealthCheck> logger)
-        : this(httpClientFactory, descriptor.ServiceName, descriptor.HttpClientName, logger)
-    {
-    }
-
-    private DownstreamHealthCheck(
         IHttpClientFactory httpClientFactory,
         string serviceName,
         string httpClientName,
-        ILogger logger)
+        ILogger<DownstreamHealthCheck> logger)
     {
         this.httpClientFactory = httpClientFactory;
         this.serviceName = serviceName;
