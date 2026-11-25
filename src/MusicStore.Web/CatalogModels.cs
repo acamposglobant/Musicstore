@@ -1,4 +1,4 @@
-namespace MusicStore.Web;
+namespace MusicStore.Web.Services;
 
 using System.Net;
 
@@ -29,4 +29,9 @@ public sealed class CatalogApiException(HttpStatusCode statusCode, ProblemDetail
     public HttpStatusCode StatusCode { get; } = statusCode;
 
     public ProblemDetails? Problem { get; } = problem;
+
+    /// <summary>Maps the exception to a user-visible message (detail → title → status fallback).</summary>
+    public string Describe() => this.Problem?.Detail
+        ?? this.Problem?.Title
+        ?? $"The request failed (HTTP {(int)this.StatusCode}).";
 }

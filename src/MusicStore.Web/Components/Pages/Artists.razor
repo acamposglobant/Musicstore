@@ -7,15 +7,21 @@
 
 <h1>Artists</h1>
 
-@if (this.artists is null)
-{
-    <p><em>Loading…</em></p>
-}
-else if (this.errorMessage is not null)
+@if (this.errorMessage is not null)
 {
     <div class="alert alert-error" role="alert">
         <strong>Could not load artists.</strong> @this.errorMessage
     </div>
+}
+
+@if (this.formError is not null)
+{
+    <div class="alert alert-error" role="alert">@this.formError</div>
+}
+
+@if (this.artists is null)
+{
+    <p><em>Loading…</em></p>
 }
 else
 {
@@ -24,12 +30,13 @@ else
             <tr>
                 <th>Id</th>
                 <th>Name</th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
             @if (this.artists.Count == 0)
             {
-                <tr><td colspan="2" class="empty-row">No artists yet.</td></tr>
+                <tr><td colspan="3" class="empty-row">No artists yet.</td></tr>
             }
             else
             {
@@ -38,6 +45,10 @@ else
                     <tr>
                         <td>@artist.Id</td>
                         <td>@artist.Name</td>
+                        <td class="actions-cell">
+                            <button class="button-link" @onclick="() => this.BeginEdit(artist)">Edit</button>
+                            <button class="button-link danger" @onclick="() => this.DeleteAsync(artist)">Delete</button>
+                        </td>
                     </tr>
                 }
             }
@@ -45,21 +56,56 @@ else
     </table>
 }
 
+<h2>@(this.editingId is null ? "Add artist" : $"Edit artist #{this.editingId}")</h2>
+
+<EditForm Model="this.form" OnValidSubmit="this.SaveAsync" class="crud-form">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="form-row">
+        <label for="artist-name">Name</label>
+        <InputText id="artist-name" @bind-Value="this.form.Name" />
+    </div>
+    <ValidationMessage For="() => this.form.Name" />
+    <div class="form-actions">
+        <button type="submit" class="button-link primary">@(this.editingId is null ? "Create" : "Save")</button>
+        @if (this.editingId is not null)
+        {
+            <button type="button" class="button-link" @onclick="this.CancelEdit">Cancel</button>
+        }
+    </div>
+</EditForm>
+
 @code {
     private IReadOnlyList<ArtistDto>? artists;
     private string? errorMessage;
+    private string? formError;
+    private int? editingId;
     private CancellationTokenSource? loadCts;
+
+    private ArtistForm form = new();
+
+    private sealed class ArtistForm
+    {
+        [Required(ErrorMessage = "Name is required.")]
+        public string Name { get; set; } = string.Empty;
+    }
 
     protected override async Task OnInitializedAsync()
     {
-        this.loadCts = new CancellationTokenSource();
+        await this.LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        this.loadCts ??= new CancellationTokenSource();
         try
         {
             this.artists = await this.Catalog.GetArtistsAsync(this.loadCts.Token);
+            this.errorMessage = null;
         }
         catch (CatalogApiException ex)
         {
-            this.errorMessage = DescribeError(ex);
+            this.errorMessage = ex.Describe();
         }
         catch (HttpRequestException ex)
         {
@@ -67,13 +113,68 @@ else
         }
     }
 
+    private async Task SaveAsync()
+    {
+        this.formError = null;
+        try
+        {
+            if (this.editingId is int id)
+            {
+                await this.Catalog.UpdateArtistAsync(id, this.form.Name);
+            }
+            else
+            {
+                await this.Catalog.CreateArtistAsync(this.form.Name);
+            }
+
+            this.form = new ArtistForm();
+            this.editingId = null;
+            await this.LoadAsync();
+        }
+        catch (CatalogApiException ex)
+        {
+            this.formError = ex.Describe();
+        }
+        catch (HttpRequestException ex)
+        {
+            this.formError = $"The catalog service is unreachable: {ex.Message}";
+        }
+    }
+
+    private void BeginEdit(ArtistDto artist)
+    {
+        this.editingId = artist.Id;
+        this.form = new ArtistForm { Name = artist.Name };
+        this.formError = null;
+    }
+
+    private void CancelEdit()
+    {
+        this.editingId = null;
+        this.form = new ArtistForm();
+        this.formError = null;
+    }
+
+    private async Task DeleteAsync(ArtistDto artist)
+    {
+        this.formError = null;
+        try
+        {
+            await this.Catalog.DeleteArtistAsync(artist.Id);
+            await this.LoadAsync();
+        }
+        catch (CatalogApiException ex)
+        {
+            this.formError = ex.Describe();
+        }
+        catch (HttpRequestException ex)
+        {
+            this.formError = $"The catalog service is unreachable: {ex.Message}";
+        }
+    }
+
     public void Dispose()
     {
         this.loadCts?.Dispose();
     }
-
-    /// <summary>Maps a gateway ProblemDetails response to a user-visible message.</summary>
-    internal static string DescribeError(CatalogApiException ex) => ex.Problem?.Detail
-        ?? ex.Problem?.Title
-        ?? $"The request failed (HTTP {(int)ex.StatusCode}).";
 }

@@ -142,3 +142,70 @@ h1:focus {
     background: #3a4152;
     color: #fff;
 }
+
+/* ---- MIG-33: CRUD forms ---- */
+.crud-form {
+    max-width: 480px;
+    margin-top: 0.75rem;
+}
+
+.form-row {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0.75rem;
+}
+
+.form-row label {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.form-row input,
+.form-row select {
+    padding: 0.4rem 0.5rem;
+    border: 1px solid #b8b8b8;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.form-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.actions-cell {
+    white-space: nowrap;
+}
+
+.actions-cell .button-link {
+    margin-right: 0.4rem;
+    cursor: pointer;
+    background: none;
+    font-size: 0.9rem;
+}
+
+.button-link.danger {
+    border-color: #a4262c;
+    color: #a4262c;
+}
+
+.button-link.danger:hover {
+    background: #a4262c;
+    color: #fff;
+}
+
+.button-link.primary {
+    background: #3a4152;
+    color: #fff;
+}
+
+.validation-message {
+    color: #a4262c;
+    font-size: 0.875rem;
+}
+
+.validation-errors {
+    color: #a4262c;
+    padding-left: 1rem;
+}

@@ -55,6 +55,12 @@ public sealed class CatalogApiClient(HttpClient httpClient)
     public async Task<AlbumDto> GetAlbumAsync(int id, CancellationToken cancellationToken = default)
         => await GetSingleAsync<AlbumDto>($"/catalog/albums/{id}", cancellationToken);
 
+    public async Task<AlbumDto> CreateAlbumAsync(int artistId, int genreId, string title, CancellationToken cancellationToken = default)
+        => await SendForJsonAsync<AlbumDto>(HttpMethod.Post, "/catalog/albums", new { artistId, genreId, title }, cancellationToken);
+
+    public async Task UpdateAlbumAsync(int id, int artistId, int genreId, string title, CancellationToken cancellationToken = default)
+        => await SendAsync(HttpMethod.Put, $"/catalog/albums/{id}", new { artistId, genreId, title }, cancellationToken);
+
     public Task DeleteAlbumAsync(int id, CancellationToken cancellationToken = default)
         => DeleteAsync($"/catalog/albums/{id}", cancellationToken);
 
@@ -66,6 +72,12 @@ public sealed class CatalogApiClient(HttpClient httpClient)
 
     public async Task<IReadOnlyList<SongDto>> GetSongsByAlbumAsync(int albumId, CancellationToken cancellationToken = default)
         => await GetListAsync<SongDto>($"/songs/songs?albumId={albumId}", cancellationToken);
+
+    public async Task<SongDto> CreateSongAsync(int albumId, string name, TimeSpan duration, CancellationToken cancellationToken = default)
+        => await SendForJsonAsync<SongDto>(HttpMethod.Post, "/songs/songs", new { albumId, name, duration }, cancellationToken);
+
+    public async Task UpdateSongAsync(int id, string name, TimeSpan duration, CancellationToken cancellationToken = default)
+        => await SendAsync(HttpMethod.Put, $"/songs/songs/{id}", new { name, duration }, cancellationToken);
 
     public Task DeleteSongAsync(int id, CancellationToken cancellationToken = default)
         => DeleteAsync($"/songs/songs/{id}", cancellationToken);
