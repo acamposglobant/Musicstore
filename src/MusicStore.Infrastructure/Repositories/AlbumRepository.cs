@@ -43,6 +43,26 @@ public sealed class AlbumRepository(
         return albums.AsList();
     }
 
+    public async Task<Album?> GetByIdWithArtistAndGenreAsync(int id, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        var albums = await connection.QueryAsync<Album, Artist, Genre, Album>(
+            """
+            SELECT a.album_id AS Id, a.artist_id AS ArtistId, a.genre_id AS GenreId, a.title AS Title,
+                   ar.artist_id AS Id, ar.name AS Name,
+                   g.genre_id AS Id, g.name AS Name, g.description AS Description
+            FROM album a
+            JOIN artist ar ON ar.artist_id = a.artist_id
+            JOIN genre g ON g.genre_id = a.genre_id
+            WHERE a.album_id = @id
+            """,
+            (row, artist, genre) => new Album(row.Id, artist, genre, row.Title),
+            new { id },
+            splitOn: "Id,Id");
+        logger.LogDebug("Repository Album.GetByIdWithArtistAndGenre | SQL: SELECT ... WHERE album_id = @id | Params: {@Params} | Found: {Found}", new { id }, albums.AsList().Count > 0);
+        return albums.AsList().FirstOrDefault();
+    }
+
     public async Task<Album?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
@@ -71,9 +91,9 @@ public sealed class AlbumRepository(
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var affected = await connection.ExecuteAsync(
-            "UPDATE album SET title = @title WHERE album_id = @id",
-            new { title = album.Title, id = album.Id });
-        logger.LogDebug("Repository Album.Update | SQL: UPDATE album SET title WHERE album_id = @id | Params: {@Params} | Rows: {Rows}", new { id = album.Id, title = album.Title }, affected);
+            "UPDATE album SET artist_id = @artistId, genre_id = @genreId, title = @title WHERE album_id = @id",
+            new { artistId = album.ArtistId, genreId = album.GenreId, title = album.Title, id = album.Id });
+        logger.LogDebug("Repository Album.Update | SQL: UPDATE album SET artist_id, genre_id, title WHERE album_id = @id | Params: {@Params} | Rows: {Rows}", new { id = album.Id, artistId = album.ArtistId, genreId = album.GenreId, title = album.Title }, affected);
         if (affected == 0)
         {
             throw new KeyNotFoundException($"Album {album.Id} not found.");
