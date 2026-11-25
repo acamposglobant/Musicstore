@@ -28,10 +28,22 @@ var songsApi = builder.AddDotnetProject("songs", "../MusicStore.Songs.Api/MusicS
 // Destinations ("http://catalog" / "http://songs") resolve via service discovery: the
 // gateway's custom IForwarderHttpClientFactory attaches the discovery handler to YARP's
 // forwarder pipeline. The gateway waits for both APIs.
-builder.AddDotnetProject("gateway", "../MusicStore.Gateway/MusicStore.Gateway.csproj")
+// YARP gateway (MIG-22): single front door — /catalog/** -> catalog API, /songs/** -> songs API.
+// Destinations ("http://catalog" / "http://songs") resolve via service discovery: the
+// gateway's custom IForwarderHttpClientFactory attaches the discovery handler to YARP's
+// forwarder pipeline. The gateway waits for both APIs.
+var gateway = builder.AddDotnetProject("gateway", "../MusicStore.Gateway/MusicStore.Gateway.csproj")
     .WithReference(catalogApi)
     .WithReference(songsApi)
     .WaitFor(catalogApi)
     .WaitFor(songsApi);
+
+// Blazor Web App (MIG-31): the browser UI, replacing the legacy Silverlight client.
+// All UI HTTP traffic goes through the gateway (WithReference(gateway) injects
+// services__gateway__http__0 for service discovery); the UI waits for it.
+builder.AddDotnetProject("web", "../MusicStore.Web/MusicStore.Web.csproj")
+    .WithHttpEndpoint()
+    .WithReference(gateway)
+    .WaitFor(gateway);
 
 builder.Build().Run();

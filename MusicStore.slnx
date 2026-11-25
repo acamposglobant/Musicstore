@@ -8,6 +8,7 @@
     <Project Path="src/MusicStore.Api/MusicStore.Api.csproj" />
     <Project Path="src/MusicStore.Songs.Api/MusicStore.Songs.Api.csproj" />
     <Project Path="src/MusicStore.Gateway/MusicStore.Gateway.csproj" />
+    <Project Path="src/MusicStore.Web/MusicStore.Web.csproj" />
     <Project Path="src/MusicStore.DbMigrations/MusicStore.DbMigrations.csproj" />
   </Folder>
   <Folder Name="/tests/">
