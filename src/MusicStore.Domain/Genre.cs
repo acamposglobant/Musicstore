@@ -21,6 +21,19 @@ public class Genre : Entity
         SetDescription(description);
     }
 
+    /// <summary>Reconstitutes an existing genre from persistence.</summary>
+    public Genre(int id, string name, string description)
+    {
+        if (id <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(id), "Persisted genre id must be positive.");
+        }
+
+        SetName(name);
+        SetDescription(description);
+        this.Id = id;
+    }
+
     public string Name { get; private set; } = null!;
 
     public string Description { get; private set; } = null!;

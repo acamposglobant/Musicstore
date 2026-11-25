@@ -29,6 +29,24 @@ public class Album : Entity
         genre.albums.Add(this);
     }
 
+    /// <summary>Creates a new album from foreign-key ids only (API create path; entities not loaded).</summary>
+    public Album(int artistId, int genreId, string title)
+    {
+        if (artistId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(artistId), "Artist id must be positive.");
+        }
+
+        if (genreId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(genreId), "Genre id must be positive.");
+        }
+
+        SetTitle(title);
+        this.ArtistId = artistId;
+        this.GenreId = genreId;
+    }
+
     /// <summary>Reconstitutes an existing album from persistence with its owning references.</summary>
     public Album(int id, int artistId, int genreId, string title)
     {
@@ -51,6 +69,38 @@ public class Album : Entity
         this.Id = id;
         this.ArtistId = artistId;
         this.GenreId = genreId;
+    }
+
+    /// <summary>
+    /// Reconstitutes an existing album from persistence together with its
+    /// artist and genre (multi-mapping read path); navigation collections are
+    /// not wired — load songs explicitly via the song repository.
+    /// </summary>
+    public Album(int id, Artist artist, Genre genre, string title)
+    {
+        if (id <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(id), "Persisted album id must be positive.");
+        }
+
+        ArgumentNullException.ThrowIfNull(artist);
+        ArgumentNullException.ThrowIfNull(genre);
+        if (artist.Id <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(artist), "Artist id must be positive.");
+        }
+
+        if (genre.Id <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(genre), "Genre id must be positive.");
+        }
+
+        SetTitle(title);
+        this.Id = id;
+        this.Artist = artist;
+        this.ArtistId = artist.Id;
+        this.Genre = genre;
+        this.GenreId = genre.Id;
     }
 
     public int ArtistId { get; private set; }

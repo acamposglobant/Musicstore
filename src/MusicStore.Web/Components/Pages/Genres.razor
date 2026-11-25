@@ -1,0 +1,190 @@
+@page "/genres"
+@using MusicStore.Web.Services
+@inject CatalogApiClient Catalog
+@implements IDisposable
+
+<PageTitle>Genres — MusicStore</PageTitle>
+
+<h1>Genres</h1>
+
+@if (this.errorMessage is not null)
+{
+    <div class="alert alert-error" role="alert">
+        <strong>Could not load genres.</strong> @this.errorMessage
+    </div>
+}
+
+@if (this.formError is not null)
+{
+    <div class="alert alert-error" role="alert">@this.formError</div>
+}
+
+@if (this.genres is null)
+{
+    <p><em>Loading…</em></p>
+}
+else
+{
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (this.genres.Count == 0)
+            {
+                <tr><td colspan="4" class="empty-row">No genres yet.</td></tr>
+            }
+            else
+            {
+                @foreach (var genre in this.genres)
+                {
+                    <tr>
+                        <td>@genre.Id</td>
+                        <td>@genre.Name</td>
+                        <td>@genre.Description</td>
+                        <td class="actions-cell">
+                            <button class="button-link" @onclick="() => this.BeginEdit(genre)">Edit</button>
+                            <button class="button-link danger" @onclick="() => this.DeleteAsync(genre)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+}
+
+<h2>@(this.editingId is null ? "Add genre" : $"Edit genre #{this.editingId}")</h2>
+
+<EditForm Model="this.form" OnValidSubmit="this.SaveAsync" class="crud-form">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="form-row">
+        <label for="genre-name">Name</label>
+        <InputText id="genre-name" @bind-Value="this.form.Name" />
+        <ValidationMessage For="() => this.form.Name" />
+    </div>
+    <div class="form-row">
+        <label for="genre-description">Description</label>
+        <InputText id="genre-description" @bind-Value="this.form.Description" />
+        <ValidationMessage For="() => this.form.Description" />
+    </div>
+    <div class="form-actions">
+        <button type="submit" class="button-link primary">@(this.editingId is null ? "Create" : "Save")</button>
+        @if (this.editingId is not null)
+        {
+            <button type="button" class="button-link" @onclick="this.CancelEdit">Cancel</button>
+        }
+    </div>
+</EditForm>
+
+@code {
+    private IReadOnlyList<GenreDto>? genres;
+    private string? errorMessage;
+    private string? formError;
+    private int? editingId;
+    private CancellationTokenSource? loadCts;
+
+    private GenreForm form = new();
+
+    private sealed class GenreForm
+    {
+        [Required(ErrorMessage = "Name is required.")]
+        public string Name { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Description is required.")]
+        public string Description { get; set; } = string.Empty;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await this.LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        this.loadCts ??= new CancellationTokenSource();
+        try
+        {
+            this.genres = await this.Catalog.GetGenresAsync(this.loadCts.Token);
+            this.errorMessage = null;
+        }
+        catch (CatalogApiException ex)
+        {
+            this.errorMessage = ex.Describe();
+        }
+        catch (HttpRequestException ex)
+        {
+            this.errorMessage = $"The catalog service is unreachable: {ex.Message}";
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        this.formError = null;
+        try
+        {
+            if (this.editingId is int id)
+            {
+                await this.Catalog.UpdateGenreAsync(id, this.form.Name, this.form.Description);
+            }
+            else
+            {
+                await this.Catalog.CreateGenreAsync(this.form.Name, this.form.Description);
+            }
+
+            this.form = new GenreForm();
+            this.editingId = null;
+            await this.LoadAsync();
+        }
+        catch (CatalogApiException ex)
+        {
+            this.formError = ex.Describe();
+        }
+        catch (HttpRequestException ex)
+        {
+            this.formError = $"The catalog service is unreachable: {ex.Message}";
+        }
+    }
+
+    private void BeginEdit(GenreDto genre)
+    {
+        this.editingId = genre.Id;
+        this.form = new GenreForm { Name = genre.Name, Description = genre.Description };
+        this.formError = null;
+    }
+
+    private void CancelEdit()
+    {
+        this.editingId = null;
+        this.form = new GenreForm();
+        this.formError = null;
+    }
+
+    private async Task DeleteAsync(GenreDto genre)
+    {
+        this.formError = null;
+        try
+        {
+            await this.Catalog.DeleteGenreAsync(genre.Id);
+            await this.LoadAsync();
+        }
+        catch (CatalogApiException ex)
+        {
+            this.formError = ex.Describe();
+        }
+        catch (HttpRequestException ex)
+        {
+            this.formError = $"The catalog service is unreachable: {ex.Message}";
+        }
+    }
+
+    public void Dispose()
+    {
+        this.loadCts?.Dispose();
+    }
+}

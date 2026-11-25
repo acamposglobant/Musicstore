@@ -25,6 +25,19 @@ public class Song : Entity
         album.songs.Add(this);
     }
 
+    /// <summary>Creates a new song from its album id only (API create path; album not loaded).</summary>
+    public Song(int albumId, string name, TimeSpan duration)
+    {
+        if (albumId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(albumId), "Album id must be positive.");
+        }
+
+        SetName(name);
+        SetDuration(duration);
+        this.AlbumId = albumId;
+    }
+
     /// <summary>Reconstitutes an existing song from persistence.</summary>
     public Song(int id, int albumId, string name, TimeSpan duration)
     {

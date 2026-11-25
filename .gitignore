@@ -25,3 +25,6 @@ TestResults/
 
 ## Aspire / Docker local state
 .coda/
+
+# Serilog file sinks (MIG-35)
+src/*/logs/

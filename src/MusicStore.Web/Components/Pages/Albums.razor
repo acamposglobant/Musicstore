@@ -1,0 +1,218 @@
+@page "/albums"
+@using MusicStore.Web.Services
+@inject CatalogApiClient Catalog
+@implements IDisposable
+
+<PageTitle>Albums — MusicStore</PageTitle>
+
+<h1>Albums</h1>
+
+@if (this.errorMessage is not null)
+{
+    <div class="alert alert-error" role="alert">
+        <strong>Could not load albums.</strong> @this.errorMessage
+    </div>
+}
+
+@if (this.formError is not null)
+{
+    <div class="alert alert-error" role="alert">@this.formError</div>
+}
+
+@if (this.albums is null)
+{
+    <p><em>Loading…</em></p>
+}
+else
+{
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Title</th>
+                <th>Artist</th>
+                <th>Genre</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (this.albums.Count == 0)
+            {
+                <tr><td colspan="5" class="empty-row">No albums yet.</td></tr>
+            }
+            else
+            {
+                @foreach (var album in this.albums)
+                {
+                    <tr>
+                        <td>@album.Id</td>
+                        <td>@album.Title</td>
+                        <td>@album.ArtistName</td>
+                        <td>@album.GenreName</td>
+                        <td class="actions-cell">
+                            <a class="button-link" href="albums/@album.Id">Songs</a>
+                            <button class="button-link" @onclick="() => this.BeginEdit(album)">Edit</button>
+                            <button class="button-link danger" @onclick="() => this.DeleteAsync(album)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+}
+
+<h2>@(this.editingId is null ? "Add album" : $"Edit album #{this.editingId}")</h2>
+
+<EditForm Model="this.form" OnValidSubmit="this.SaveAsync" class="crud-form">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="form-row">
+        <label for="album-title">Title</label>
+        <InputText id="album-title" @bind-Value="this.form.Title" />
+        <ValidationMessage For="() => this.form.Title" />
+    </div>
+    <div class="form-row">
+        <label for="album-artist">Artist</label>
+        <InputSelect id="album-artist" @bind-Value="this.form.ArtistId">
+            <option value="">— select artist —</option>
+            @foreach (var artist in this.artistOptions)
+            {
+                <option value="@artist.Id">@artist.Name</option>
+            }
+        </InputSelect>
+        <ValidationMessage For="() => this.form.ArtistId" />
+    </div>
+    <div class="form-row">
+        <label for="album-genre">Genre</label>
+        <InputSelect id="album-genre" @bind-Value="this.form.GenreId">
+            <option value="">— select genre —</option>
+            @foreach (var genre in this.genreOptions)
+            {
+                <option value="@genre.Id">@genre.Name</option>
+            }
+        </InputSelect>
+        <ValidationMessage For="() => this.form.GenreId" />
+    </div>
+    <div class="form-actions">
+        <button type="submit" class="button-link primary">@(this.editingId is null ? "Create" : "Save")</button>
+        @if (this.editingId is not null)
+        {
+            <button type="button" class="button-link" @onclick="this.CancelEdit">Cancel</button>
+        }
+    </div>
+</EditForm>
+
+@code {
+    private IReadOnlyList<AlbumDto>? albums;
+    private IReadOnlyList<ArtistDto> artistOptions = [];
+    private IReadOnlyList<GenreDto> genreOptions = [];
+    private string? errorMessage;
+    private string? formError;
+    private int? editingId;
+    private CancellationTokenSource? loadCts;
+
+    private AlbumForm form = new();
+
+    private sealed class AlbumForm
+    {
+        [Required(ErrorMessage = "Title is required.")]
+        public string Title { get; set; } = string.Empty;
+
+        [Range(1, int.MaxValue, ErrorMessage = "Artist is required.")]
+        public int ArtistId { get; set; }
+
+        [Range(1, int.MaxValue, ErrorMessage = "Genre is required.")]
+        public int GenreId { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await this.LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        this.loadCts ??= new CancellationTokenSource();
+        try
+        {
+            // Enriched read path: artist/genre names resolved server-side (MIG-19).
+            this.albums = await this.Catalog.GetAlbumsWithDetailsAsync(this.loadCts.Token);
+            this.artistOptions = await this.Catalog.GetArtistsAsync(this.loadCts.Token);
+            this.genreOptions = await this.Catalog.GetGenresAsync(this.loadCts.Token);
+            this.errorMessage = null;
+        }
+        catch (CatalogApiException ex)
+        {
+            this.errorMessage = ex.Describe();
+        }
+        catch (HttpRequestException ex)
+        {
+            this.errorMessage = $"The catalog service is unreachable: {ex.Message}";
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        this.formError = null;
+        try
+        {
+            if (this.editingId is int id)
+            {
+                await this.Catalog.UpdateAlbumAsync(id, this.form.ArtistId, this.form.GenreId, this.form.Title);
+            }
+            else
+            {
+                await this.Catalog.CreateAlbumAsync(this.form.ArtistId, this.form.GenreId, this.form.Title);
+            }
+
+            this.form = new AlbumForm();
+            this.editingId = null;
+            await this.LoadAsync();
+        }
+        catch (CatalogApiException ex)
+        {
+            this.formError = ex.Describe();
+        }
+        catch (HttpRequestException ex)
+        {
+            this.formError = $"The catalog service is unreachable: {ex.Message}";
+        }
+    }
+
+    private void BeginEdit(AlbumDto album)
+    {
+        this.editingId = album.Id;
+        this.form = new AlbumForm { Title = album.Title, ArtistId = album.ArtistId, GenreId = album.GenreId };
+        this.formError = null;
+    }
+
+    private void CancelEdit()
+    {
+        this.editingId = null;
+        this.form = new AlbumForm();
+        this.formError = null;
+    }
+
+    private async Task DeleteAsync(AlbumDto album)
+    {
+        this.formError = null;
+        try
+        {
+            await this.Catalog.DeleteAlbumAsync(album.Id);
+            await this.LoadAsync();
+        }
+        catch (CatalogApiException ex)
+        {
+            this.formError = ex.Describe();
+        }
+        catch (HttpRequestException ex)
+        {
+            this.formError = $"The catalog service is unreachable: {ex.Message}";
+        }
+    }
+
+    public void Dispose()
+    {
+        this.loadCts?.Dispose();
+    }
+}

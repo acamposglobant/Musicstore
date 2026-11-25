@@ -1,0 +1,23 @@
+@inherits LayoutComponentBase
+
+<div class="page">
+    <nav class="sidebar">
+        <h1 class="brand">MusicStore</h1>
+        <ul>
+            <li><NavLink class="nav-link" href="" Match="NavLinkMatch.All">Home</NavLink></li>
+            <li><NavLink class="nav-link" href="artists">Artists</NavLink></li>
+            <li><NavLink class="nav-link" href="genres">Genres</NavLink></li>
+            <li><NavLink class="nav-link" href="albums">Albums</NavLink></li>
+        </ul>
+    </nav>
+
+    <main class="content">
+        @Body
+    </main>
+</div>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>

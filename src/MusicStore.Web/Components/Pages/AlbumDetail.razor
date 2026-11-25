@@ -1,0 +1,223 @@
+@page "/albums/{Id:int}"
+@using MusicStore.Web.Services
+@using System.ComponentModel.DataAnnotations
+@inject CatalogApiClient Catalog
+@implements IDisposable
+
+<PageTitle>@(this.album?.Title ?? "Album") — MusicStore</PageTitle>
+
+<h1>@(this.album?.Title ?? "Album")</h1>
+
+@if (this.notFound)
+{
+    <div class="alert alert-warning" role="alert">
+        This album does not exist. <a href="albums">Back to albums</a>.
+    </div>
+}
+else if (this.errorMessage is not null)
+{
+    <div class="alert alert-error" role="alert">
+        <strong>Could not load the album.</strong> @this.errorMessage
+    </div>
+}
+else if (this.album is null || this.songs is null)
+{
+    <p><em>Loading…</em></p>
+}
+else
+{
+    <p class="album-meta">
+        by <strong>@this.album.ArtistName</strong> · Genre: @this.album.GenreName
+    </p>
+
+    <h2>Songs</h2>
+
+    @if (this.songFormError is not null)
+    {
+        <div class="alert alert-error" role="alert">@this.songFormError</div>
+    }
+
+    @if (this.songs.Count == 0)
+    {
+        <p>No songs on this album yet.</p>
+    }
+    else
+    {
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Duration</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var (song, index) in this.songs.Select((s, i) => (s, i)))
+                {
+                    <tr>
+                        <td>@(index + 1)</td>
+                        <td>@song.Name</td>
+                        <td>@song.Duration.ToString(@"mm\:ss")</td>
+                        <td class="actions-cell">
+                            <button class="button-link" @onclick="() => this.BeginEditSong(song)">Edit</button>
+                            <button class="button-link danger" @onclick="() => this.DeleteSongAsync(song)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    <h3>@(this.editingSongId is null ? "Add song" : $"Edit song #{this.editingSongId}")</h3>
+
+    <EditForm Model="this.songForm" OnValidSubmit="this.SaveSongAsync" class="crud-form">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <div class="form-row">
+            <label for="song-name">Name</label>
+            <InputText id="song-name" @bind-Value="this.songForm.Name" />
+            <ValidationMessage For="() => this.songForm.Name" />
+        </div>
+        <div class="form-row">
+            <label for="song-duration">Duration (hh:mm:ss)</label>
+            <InputText id="song-duration" @bind-Value="this.formDuration" />
+            <ValidationMessage For="() => this.formDuration" />
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="button-link primary">@(this.editingSongId is null ? "Add song" : "Save")</button>
+            @if (this.editingSongId is not null)
+            {
+                <button type="button" class="button-link" @onclick="this.CancelEditSong">Cancel</button>
+            }
+        </div>
+    </EditForm>
+
+    <p><a href="albums">← Back to albums</a></p>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private AlbumDto? album;
+    private IReadOnlyList<SongDto>? songs;
+    private string? errorMessage;
+    private string? songFormError;
+    private bool notFound;
+    private int? editingSongId;
+    private string formDuration = "00:03:00";
+    private CancellationTokenSource? loadCts;
+
+    private SongForm songForm = new();
+
+    private sealed class SongForm
+    {
+        [Required(ErrorMessage = "Song name is required.")]
+        public string Name { get; set; } = string.Empty;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await this.LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        this.loadCts ??= new CancellationTokenSource();
+        try
+        {
+            this.album = await this.Catalog.GetAlbumAsync(this.Id, this.loadCts.Token);
+            this.songs = await this.Catalog.GetSongsByAlbumAsync(this.Id, this.loadCts.Token);
+            this.errorMessage = null;
+        }
+        catch (CatalogApiException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            this.notFound = true;
+        }
+        catch (CatalogApiException ex)
+        {
+            this.errorMessage = ex.Describe();
+        }
+        catch (HttpRequestException ex)
+        {
+            this.errorMessage = $"The catalog service is unreachable: {ex.Message}";
+        }
+    }
+
+    private async Task SaveSongAsync()
+    {
+        this.songFormError = null;
+
+        // Client-side duration parse; the API validates positivity (422) as well.
+        if (!TimeSpan.TryParse(this.formDuration, out var duration) || duration <= TimeSpan.Zero)
+        {
+            this.songFormError = "Duration must be a positive time span (e.g. 00:03:30).";
+            return;
+        }
+
+        try
+        {
+            if (this.editingSongId is int id)
+            {
+                await this.Catalog.UpdateSongAsync(id, this.songForm.Name, duration);
+            }
+            else
+            {
+                await this.Catalog.CreateSongAsync(this.Id, this.songForm.Name, duration);
+            }
+
+            this.songForm = new SongForm();
+            this.formDuration = "00:03:00";
+            this.editingSongId = null;
+            await this.LoadAsync();
+        }
+        catch (CatalogApiException ex)
+        {
+            this.songFormError = ex.Describe();
+        }
+        catch (HttpRequestException ex)
+        {
+            this.songFormError = $"The songs service is unreachable: {ex.Message}";
+        }
+    }
+
+    private void BeginEditSong(SongDto song)
+    {
+        this.editingSongId = song.Id;
+        this.songForm = new SongForm { Name = song.Name };
+        this.formDuration = song.Duration.ToString(@"hh\:mm\:ss");
+        this.songFormError = null;
+    }
+
+    private void CancelEditSong()
+    {
+        this.editingSongId = null;
+        this.songForm = new SongForm();
+        this.formDuration = "00:03:00";
+        this.songFormError = null;
+    }
+
+    private async Task DeleteSongAsync(SongDto song)
+    {
+        this.songFormError = null;
+        try
+        {
+            await this.Catalog.DeleteSongAsync(song.Id);
+            await this.LoadAsync();
+        }
+        catch (CatalogApiException ex)
+        {
+            this.songFormError = ex.Describe();
+        }
+        catch (HttpRequestException ex)
+        {
+            this.songFormError = $"The songs service is unreachable: {ex.Message}";
+        }
+    }
+
+    public void Dispose()
+    {
+        this.loadCts?.Dispose();
+    }
+}
