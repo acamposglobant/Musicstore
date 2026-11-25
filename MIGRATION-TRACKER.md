@@ -66,12 +66,12 @@ A task is **Done** only when ALL of the following hold:
 | Metric | Value |
 |---|---|
 | **Total Tasks** | 36 |
-| **Not Started** | 13 |
+| **Not Started** | 12 |
 | **In Progress** | 0 |
 | **In Review** | 0 |
 | **Blocked** | 0 |
-| **Completed** | 23 |
-| **Completion %** | `▓▓▓▓▓▓▓▓░░ 64%` |
+| **Completed** | 24 |
+| **Completion %** | `▓▓▓▓▓▓▓▓░░ 67%` |
 
 **Tasks by Phase**
 
@@ -82,7 +82,7 @@ A task is **Done** only when ALL of the following hold:
 | Phase 3: Domain & Dapper Infrastructure | 7 | 7 |
 | Phase 4: Minimal APIs & WCF Replacement | 5 | 5 |
 | Phase 5: Microservices Split & YARP Gateway | 3 | 3 |
-| Phase 6: xUnit & Aspire Integration Testing | 4 | 0 |
+| Phase 6: xUnit & Aspire Integration Testing | 4 | 1 |
 | Phase 7: Legacy Decommission | 3 | 0 |
 | Phase 8: Web UI (Blazor) | 4 | 0 |
 | Phase 9: Observability Enhancements | 2 | 0 |
@@ -124,7 +124,7 @@ A task is **Done** only when ALL of the following hold:
 | MIG-22 | Phase 5: Microservices Split & YARP Gateway | YARP API Gateway + service discovery | `MusicStore.Gateway` with YARP routes `/catalog/{**catch-all}` → catalog API, `/songs/{**catch-all}` → songs API; endpoints resolved via Aspire service discovery (`AddServiceDiscovery`). Registered in AppHost. | Gateway (YARP) | `MusicStore.Hosts.Web` (single SOAP endpoint) | M (4-8h) | Done | MIG-21 |
 | MIG-23 | Phase 5: Microservices Split & YARP Gateway | Resilience & health for downstream calls | Standard resilience handlers (retry/circuit-breaker/timeout) on gateway + inter-service `HttpClient`; health checks aggregate DB + downstream; dashboard all green. | AppHost / Aspire | `myWCFMessages.xml` tracing (replaced by OTel) | S (2-4h) | Done | MIG-22 |
 | MIG-24 | Phase 6: xUnit & Aspire Integration Testing | xUnit unit tests for Application handlers | `MusicStore.Application.UnitTests`: NSubstitute mocks of repository interfaces; cover happy path + not-found + validation for every handler. Zero DB access. | Tests (xUnit) | `MusicStore.Data.Test` (MSTest) | M (4-8h) | Not Started | MIG-16 |
-| MIG-25 | Phase 6: xUnit & Aspire Integration Testing | Dapper repository tests against PostgreSQL | `MusicStore.Infrastructure.Tests`: real PostgreSQL (Testcontainers or Aspire testing `DistributedApplicationTestingBuilder`); verify snake_case mapping, multi-mapping, interval round-trip, transaction rollback. | Tests (xUnit) | `UnitTestArtist/Album/Genre/Song.cs` | M (4-8h) | Not Started | MIG-13, MIG-14 |
+| MIG-25 | Phase 6: xUnit & Aspire Integration Testing | Dapper repository tests against PostgreSQL | `MusicStore.Infrastructure.Tests`: real PostgreSQL (Testcontainers or Aspire testing `DistributedApplicationTestingBuilder`); verify snake_case mapping, multi-mapping, interval round-trip, transaction rollback. | Tests (xUnit) | `UnitTestArtist/Album/Genre/Song.cs` | M (4-8h) | Done | MIG-13, MIG-14 |
 | MIG-26 | Phase 6: xUnit & Aspire Integration Testing | End-to-end Aspire integration tests | `MusicStore.IntegrationTests` using `Aspire.Hosting.Testing`: spin AppHost, wait for health checks, exercise HTTP endpoints (CRUD for all 4 entities) through the gateway, assert RFC 9457 error responses. | Tests (xUnit) | `MusicStore.WCF.Test/UnitTestMusicStoreService.cs` | L (1-2d) | Not Started | MIG-22, MIG-24 |
 | MIG-27 | Phase 6: xUnit & Aspire Integration Testing | Legacy parity verification | Automated comparison: legacy `GetArtist()`/`GetGenres()` SOAP payloads vs new REST responses (same seed data). Parity report checked into `docs/`. Sign-off gate for Phase 7. | Tests (xUnit) | `IMusicStoreService`, `ServiceReturn` payloads | S (2-4h) | Not Started | MIG-26 |
 | MIG-28 | Phase 7: Legacy Decommission | Cutover checklist & freeze legacy | Verify parity report, export final SQL Server data snapshot, tag `legacy/final` in git, freeze `Legacy/` (no further changes). | PostgreSQL / DbUp | `Legacy/` (whole tree) | S (2-4h) | Not Started | MIG-27 |
