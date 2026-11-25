@@ -4,12 +4,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using MusicStore.Application.Albums;
-using MusicStore.Application.Songs;
 
 /// <summary>
 /// Albums CRUD endpoints, including the enriched read path
-/// (<c>GET /albums?include=artist,genre</c> — Dapper multi-mapping) and the
-/// nested songs collection. Legacy: <c>GetArtistResponse</c> SOAP payload.
+/// (<c>GET /albums/with-details</c> — Dapper multi-mapping). Legacy: <c>GetArtistResponse</c> SOAP payload.
+/// Songs are served by the Songs microservice (MIG-21): <c>GET /songs?albumId={id}</c>.
 /// </summary>
 public static class AlbumEndpoints
 {
@@ -45,15 +44,6 @@ public static class AlbumEndpoints
             .WithSummary("Gets an album by id")
             .Produces<AlbumDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status404NotFound);
-
-        _ = albums.MapGet("/{id:int}/songs", async (int id, GetSongsByAlbumHandler handler, CancellationToken cancellationToken) =>
-            {
-                var songs = await handler.HandleAsync(id, cancellationToken);
-                return TypedResults.Ok(songs);
-            })
-            .WithName("GetAlbumSongs")
-            .WithSummary("Gets all songs of an album")
-            .Produces<IReadOnlyList<SongDto>>(StatusCodes.Status200OK);
 
         _ = albums.MapPost("/", async (CreateAlbumRequest request, CreateAlbumHandler handler, CancellationToken cancellationToken) =>
             {

@@ -8,6 +8,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Error handling maps Application-layer exceptions (NotFoundException, ValidationException)
+         to RFC 9457 ProblemDetails; no cycle — Application references only Domain. -->
+    <ProjectReference Include="..\MusicStore.Application\MusicStore.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
 
     <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.10.0" />
