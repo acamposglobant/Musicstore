@@ -83,3 +83,62 @@ h1:focus {
     flex: 1;
     padding: 1.5rem 2rem;
 }
+
+/* ---- MIG-32: catalog browse views ---- */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.75rem;
+}
+
+.data-table th,
+.data-table td {
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #e2e2e2;
+}
+
+.data-table thead th {
+    border-bottom: 2px solid #1b1f27;
+}
+
+.data-table .empty-row {
+    color: #777;
+    font-style: italic;
+}
+
+.alert {
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    margin: 0.75rem 0;
+}
+
+.alert-error {
+    background: #fdecea;
+    color: #8a1f11;
+    border: 1px solid #f5c6bd;
+}
+
+.alert-warning {
+    background: #fff7e0;
+    color: #7a5b00;
+    border: 1px solid #f0e0a0;
+}
+
+.album-meta {
+    color: #555;
+}
+
+.button-link {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    border: 1px solid #3a4152;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #3a4152;
+}
+
+.button-link:hover {
+    background: #3a4152;
+    color: #fff;
+}

@@ -58,6 +58,10 @@ public sealed class CatalogApiClient(HttpClient httpClient)
     public Task DeleteAlbumAsync(int id, CancellationToken cancellationToken = default)
         => DeleteAsync($"/catalog/albums/{id}", cancellationToken);
 
+    /// <summary>Enriched read path: albums with artist/genre names resolved server-side.</summary>
+    public async Task<IReadOnlyList<AlbumDto>> GetAlbumsWithDetailsAsync(CancellationToken cancellationToken = default)
+        => await GetListAsync<AlbumDto>("/catalog/albums/with-details", cancellationToken);
+
     // ---- Songs -----------------------------------------------------------------
 
     public async Task<IReadOnlyList<SongDto>> GetSongsByAlbumAsync(int albumId, CancellationToken cancellationToken = default)

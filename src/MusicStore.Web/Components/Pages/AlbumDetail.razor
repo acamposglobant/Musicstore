@@ -1,0 +1,100 @@
+@page "/albums/{Id:int}"
+@using MusicStore.Web.Services
+@inject CatalogApiClient Catalog
+@implements IDisposable
+
+<PageTitle>@(this.album?.Title ?? "Album") — MusicStore</PageTitle>
+
+<h1>@(this.album?.Title ?? "Album")</h1>
+
+@if (this.notFound)
+{
+    <div class="alert alert-warning" role="alert">
+        This album does not exist. <a href="albums">Back to albums</a>.
+    </div>
+}
+else if (this.errorMessage is not null)
+{
+    <div class="alert alert-error" role="alert">
+        <strong>Could not load the album.</strong> @this.errorMessage
+    </div>
+}
+else if (this.album is null || this.songs is null)
+{
+    <p><em>Loading…</em></p>
+}
+else
+{
+    <p class="album-meta">
+        by <strong>@this.album.ArtistName</strong> · Genre: @this.album.GenreName
+    </p>
+
+    <h2>Songs</h2>
+
+    @if (this.songs.Count == 0)
+    {
+        <p>No songs on this album yet.</p>
+    }
+    else
+    {
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Duration</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var (song, index) in this.songs.Select((s, i) => (s, i)))
+                {
+                    <tr>
+                        <td>@(index + 1)</td>
+                        <td>@song.Name</td>
+                        <td>@song.Duration.ToString(@"mm\:ss")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    <p><a href="albums">← Back to albums</a></p>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private AlbumDto? album;
+    private IReadOnlyList<SongDto>? songs;
+    private string? errorMessage;
+    private bool notFound;
+    private CancellationTokenSource? loadCts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        this.loadCts = new CancellationTokenSource();
+        try
+        {
+            this.album = await this.Catalog.GetAlbumAsync(this.Id, this.loadCts.Token);
+            this.songs = await this.Catalog.GetSongsByAlbumAsync(this.Id, this.loadCts.Token);
+        }
+        catch (CatalogApiException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            this.notFound = true;
+        }
+        catch (CatalogApiException ex)
+        {
+            this.errorMessage = Artists.DescribeError(ex);
+        }
+        catch (HttpRequestException ex)
+        {
+            this.errorMessage = $"The catalog service is unreachable: {ex.Message}";
+        }
+    }
+
+    public void Dispose()
+    {
+        this.loadCts?.Dispose();
+    }
+}

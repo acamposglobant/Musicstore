@@ -1,0 +1,81 @@
+@page "/albums"
+@using MusicStore.Web.Services
+@inject CatalogApiClient Catalog
+@implements IDisposable
+
+<PageTitle>Albums — MusicStore</PageTitle>
+
+<h1>Albums</h1>
+
+@if (this.albums is null)
+{
+    <p><em>Loading…</em></p>
+}
+else if (this.errorMessage is not null)
+{
+    <div class="alert alert-error" role="alert">
+        <strong>Could not load albums.</strong> @this.errorMessage
+    </div>
+}
+else
+{
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Title</th>
+                <th>Artist</th>
+                <th>Genre</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (this.albums.Count == 0)
+            {
+                <tr><td colspan="5" class="empty-row">No albums yet.</td></tr>
+            }
+            else
+            {
+                @foreach (var album in this.albums)
+                {
+                    <tr>
+                        <td>@album.Id</td>
+                        <td>@album.Title</td>
+                        <td>@album.ArtistName</td>
+                        <td>@album.GenreName</td>
+                        <td><a class="button-link" href="albums/@album.Id">View songs</a></td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private IReadOnlyList<AlbumDto>? albums;
+    private string? errorMessage;
+    private CancellationTokenSource? loadCts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        this.loadCts = new CancellationTokenSource();
+        try
+        {
+            // Enriched read path: artist/genre names resolved server-side (MIG-19).
+            this.albums = await this.Catalog.GetAlbumsWithDetailsAsync(this.loadCts.Token);
+        }
+        catch (CatalogApiException ex)
+        {
+            this.errorMessage = Artists.DescribeError(ex);
+        }
+        catch (HttpRequestException ex)
+        {
+            this.errorMessage = $"The catalog service is unreachable: {ex.Message}";
+        }
+    }
+
+    public void Dispose()
+    {
+        this.loadCts?.Dispose();
+    }
+}
