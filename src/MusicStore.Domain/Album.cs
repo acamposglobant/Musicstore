@@ -29,6 +29,24 @@ public class Album : Entity
         genre.albums.Add(this);
     }
 
+    /// <summary>Creates a new album from foreign-key ids only (API create path; entities not loaded).</summary>
+    public Album(int artistId, int genreId, string title)
+    {
+        if (artistId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(artistId), "Artist id must be positive.");
+        }
+
+        if (genreId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(genreId), "Genre id must be positive.");
+        }
+
+        SetTitle(title);
+        this.ArtistId = artistId;
+        this.GenreId = genreId;
+    }
+
     /// <summary>Reconstitutes an existing album from persistence with its owning references.</summary>
     public Album(int id, int artistId, int genreId, string title)
     {

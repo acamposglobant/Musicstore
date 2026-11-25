@@ -1,0 +1,73 @@
+namespace MusicStore.Application.Artists;
+
+using MusicStore.Application.Common;
+using MusicStore.Application.Interfaces;
+using MusicStore.Domain;
+
+/// <summary>
+/// Returns all artists. Legacy: <c>MusicStoreComponent.GetArtists()</c>.
+/// </summary>
+public sealed class GetArtistsHandler(IArtistRepository artistRepository)
+{
+    public async Task<IReadOnlyList<ArtistDto>> HandleAsync(CancellationToken cancellationToken = default)
+    {
+        var artists = await artistRepository.GetAllAsync(cancellationToken);
+        return [.. artists.Select(a => a.ToDto())];
+    }
+}
+
+/// <summary>
+/// Returns a single artist or throws <see cref="NotFoundException"/>. Legacy: <c>GetArtist()</c> SOAP op.
+/// </summary>
+public sealed class GetArtistByIdHandler(IArtistRepository artistRepository)
+{
+    public async Task<ArtistDto> HandleAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var artist = await artistRepository.GetByIdAsync(id, cancellationToken)
+                     ?? throw new NotFoundException(nameof(Artist), id);
+        return artist.ToDto();
+    }
+}
+
+/// <summary>
+/// Creates an artist and returns it with its database-generated id.
+/// </summary>
+public sealed class CreateArtistHandler(IArtistRepository artistRepository)
+{
+    public async Task<ArtistDto> HandleAsync(CreateArtistRequest request, CancellationToken cancellationToken = default)
+    {
+        var artist = new Artist(request.Name);
+        var created = await artistRepository.AddAsync(artist, cancellationToken);
+        return created.ToDto();
+    }
+}
+
+/// <summary>
+/// Renames an existing artist. Throws <see cref="NotFoundException"/> when the artist does not exist.
+/// </summary>
+public sealed class UpdateArtistHandler(IArtistRepository artistRepository)
+{
+    public async Task HandleAsync(int id, UpdateArtistRequest request, CancellationToken cancellationToken = default)
+    {
+        var artist = await artistRepository.GetByIdAsync(id, cancellationToken)
+                     ?? throw new NotFoundException(nameof(Artist), id);
+
+        artist.Rename(request.Name);
+        await artistRepository.UpdateAsync(artist, cancellationToken);
+    }
+}
+
+/// <summary>
+/// Deletes an artist (cascades to its albums/songs per schema FK rules).
+/// Throws <see cref="NotFoundException"/> when the artist does not exist.
+/// </summary>
+public sealed class DeleteArtistHandler(IArtistRepository artistRepository)
+{
+    public async Task HandleAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var artist = await artistRepository.GetByIdAsync(id, cancellationToken)
+                     ?? throw new NotFoundException(nameof(Artist), id);
+
+        await artistRepository.DeleteAsync(artist, cancellationToken);
+    }
+}
