@@ -104,7 +104,7 @@ public sealed class AlbumRepositoryTests(PostgresFixture fixture) : IClassFixtur
     {
         var repository = this.CreateRepository();
 
-        await Assert.ThrowsAsync<KeyNotFoundException>(
+        await Assert.ThrowsAsync<MusicStore.Application.Common.NotFoundException>(
             () => repository.UpdateAsync(new Album(int.MaxValue, 1, 1, "Ghost"), TestContext.Current.CancellationToken));
     }
 
@@ -125,7 +125,7 @@ public sealed class AlbumRepositoryTests(PostgresFixture fixture) : IClassFixtur
     {
         var repository = this.CreateRepository();
 
-        await Assert.ThrowsAsync<KeyNotFoundException>(
+        await Assert.ThrowsAsync<MusicStore.Application.Common.NotFoundException>(
             () => repository.DeleteAsync(new Album(int.MaxValue, 1, 1, "Ghost"), TestContext.Current.CancellationToken));
     }
 

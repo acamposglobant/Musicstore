@@ -2,6 +2,7 @@ namespace MusicStore.Infrastructure.Repositories;
 
 using Dapper;
 using Microsoft.Extensions.Logging;
+using MusicStore.Application.Common;
 using MusicStore.Application.Interfaces;
 using MusicStore.Domain;
 using Npgsql;
@@ -58,7 +59,7 @@ public sealed class GenreRepository(
         logger.LogDebug("Repository Genre.Update | SQL: UPDATE genre SET name, description WHERE genre_id = @id | Params: {@Params} | Rows: {Rows}", new { id = genre.Id, name = genre.Name, description = genre.Description }, affected);
         if (affected == 0)
         {
-            throw new KeyNotFoundException($"Genre {genre.Id} not found.");
+            throw new NotFoundException(nameof(Genre), genre.Id);
         }
     }
 
@@ -71,7 +72,7 @@ public sealed class GenreRepository(
         logger.LogDebug("Repository Genre.Delete | SQL: DELETE FROM genre WHERE genre_id = @id | Params: {@Params} | Rows: {Rows}", new { id = genre.Id }, affected);
         if (affected == 0)
         {
-            throw new KeyNotFoundException($"Genre {genre.Id} not found.");
+            throw new NotFoundException(nameof(Genre), genre.Id);
         }
     }
 }
