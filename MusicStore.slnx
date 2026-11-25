@@ -10,4 +10,7 @@
     <Project Path="src/MusicStore.Gateway/MusicStore.Gateway.csproj" />
     <Project Path="src/MusicStore.DbMigrations/MusicStore.DbMigrations.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/MusicStore.Application.UnitTests/MusicStore.Application.UnitTests.csproj" />
+  </Folder>
 </Solution>
