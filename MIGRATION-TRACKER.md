@@ -66,12 +66,12 @@ A task is **Done** only when ALL of the following hold:
 | Metric | Value |
 |---|---|
 | **Total Tasks** | 36 |
-| **Not Started** | 3 |
+| **Not Started** | 2 |
 | **In Progress** | 0 |
 | **In Review** | 0 |
 | **Blocked** | 0 |
-| **Completed** | 33 |
-| **Completion %** | `▓▓▓▓▓▓▓▓▓░ 92%` |
+| **Completed** | 34 |
+| **Completion %** | `▓▓▓▓▓▓▓▓▓░ 94%` |
 
 **Tasks by Phase**
 
@@ -83,7 +83,7 @@ A task is **Done** only when ALL of the following hold:
 | Phase 4: Minimal APIs & WCF Replacement | 5 | 5 |
 | Phase 5: Microservices Split & YARP Gateway | 3 | 3 |
 | Phase 6: xUnit & Aspire Integration Testing | 4 | 4 |
-| Phase 7: Legacy Decommission | 3 | 2 |
+| Phase 7: Legacy Decommission | 3 | 3 |
 | Phase 8: Web UI (Blazor) | 4 | 4 |
 | Phase 9: Observability Enhancements | 2 | 0 |
 
@@ -129,7 +129,7 @@ A task is **Done** only when ALL of the following hold:
 | MIG-27 | Phase 6: xUnit & Aspire Integration Testing | Legacy parity verification | Automated comparison: legacy `GetArtist()`/`GetGenres()` SOAP payloads vs new REST responses (same seed data). Parity report checked into `docs/`. Sign-off gate for Phase 7. | Tests (xUnit) | `IMusicStoreService`, `ServiceReturn` payloads | S (2-4h) | Done | MIG-26 |
 | MIG-28 | Phase 7: Legacy Decommission | Cutover checklist & freeze legacy | Verify parity report, export final SQL Server data snapshot, tag `legacy/final` in git, freeze `Legacy/` (no further changes). | PostgreSQL / DbUp | `Legacy/` (whole tree) | S (2-4h) | Done | MIG-27 |
 | MIG-29 | Phase 7: Legacy Decommission | Delete legacy projects | Remove `Legacy/` from repo: WCF host/services/contracts, Silverlight + Silverlight.Web, WPF shell, `UI.Process`, `Data.Agents`, EDMX/T4 projects, MSTest projects, `backup.MusicStoreRepository.cs`. Solution builds clean with only new projects. | API (Minimal APIs) | `MusicStore.sln` legacy entries | S (2-4h) | Done | MIG-28 |
-| MIG-30 | Phase 7: Legacy Decommission | Final docs & architecture update | Rewrite `ARCHITECTURE.md` for the target state (Aspire + Clean Architecture + Dapper/PostgreSQL), update README with run instructions (`dotnet run --project AppHost`), record lessons learned. | Tests (xUnit) | `ARCHITECTURE.md`, `README.md` | XS (1-2h) | Not Started | MIG-29 |
+| MIG-30 | Phase 7: Legacy Decommission | Final docs & architecture update | Rewrite `ARCHITECTURE.md` for the target state (Aspire + Clean Architecture + Dapper/PostgreSQL), update README with run instructions (`dotnet run --project AppHost`), record lessons learned. | Tests (xUnit) | `ARCHITECTURE.md`, `README.md` | XS (1-2h) | Done | MIG-29 |
 | MIG-31 | Phase 8: Web UI (Blazor) | Scaffold Blazor Web App + Aspire registration | `src/MusicStore.Web` (Blazor Web App, Interactive Server), typed `CatalogApiClient` targeting the gateway; registered in AppHost with `WithReference(gateway)`; ProblemDetails surfaced as UI error messages. Plan: `docs/MIG-UI-migration-plan.md`. | Web UI (Blazor) | `MusicStore.UI.Silverlight` (empty skeleton — capability replacement, not a port) | M (4-8h) | Done | MIG-22 |
 | MIG-32 | Phase 8: Web UI (Blazor) | Catalog browse views | Components: Artists list, Genres list, Albums list (artist/genre names via enriched read path), Album detail with its songs (`GET /songs?albumId=`). Read-only. | Web UI (Blazor) | `MusicStore.UI.Silverlight/MainPage.xaml` (empty Grid — intended catalog browser) | M (4-8h) | Done | MIG-31, MIG-19 |
 | MIG-33 | Phase 8: Web UI (Blazor) | Catalog management (CRUD) views | Create/edit/delete forms for artists, genres, albums, songs; 422 ProblemDetails validation errors rendered inline; 404 → friendly not-found page. | Web UI (Blazor) | — (legacy UI never implemented CRUD) | M (4-8h) | Done | MIG-32 |
