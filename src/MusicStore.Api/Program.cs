@@ -55,8 +55,8 @@ app.MapGet("/", () => Results.Ok(new { service = "MusicStore.Api", status = "run
 app.MapArtistEndpoints();
 app.MapGenreEndpoints();
 
-// Albums & Songs CRUD (MIG-19): enriched read path + nested songs collection.
+// Albums CRUD (MIG-19). Songs moved to the Songs microservice (MIG-21):
+// the catalog API no longer serves songs; clients use GET /songs?albumId={id} there.
 app.MapAlbumEndpoints();
-app.MapSongEndpoints();
 
 app.Run();

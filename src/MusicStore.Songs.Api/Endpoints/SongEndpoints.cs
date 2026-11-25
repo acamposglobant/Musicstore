@@ -6,8 +6,9 @@ using Microsoft.AspNetCore.Routing;
 using MusicStore.Application.Songs;
 
 /// <summary>
-/// Songs CRUD endpoints. Duration is a true <see cref="TimeSpan"/> serialized as ISO-8601
-/// duration (PostgreSQL <c>interval</c> round-trip). Legacy: EDMX <c>Album.Songs</c> navigation.
+/// Songs CRUD endpoints (owned by the Songs microservice, MIG-21).
+/// Duration is a true <see cref="TimeSpan"/> serialized as ISO-8601 duration
+/// (PostgreSQL <c>interval</c> round-trip). Legacy: EDMX <c>Album.Songs</c> navigation.
 /// </summary>
 public static class SongEndpoints
 {
@@ -16,13 +17,17 @@ public static class SongEndpoints
         var songs = app.MapGroup("/songs")
             .WithTags("Songs");
 
-        _ = songs.MapGet("/", async (GetSongsHandler handler, CancellationToken cancellationToken) =>
+        _ = songs.MapGet("/", async (GetSongsHandler getAllHandler, GetSongsByAlbumHandler getByAlbumHandler, int? albumId, CancellationToken cancellationToken) =>
             {
-                var songs = await handler.HandleAsync(cancellationToken);
+                // albumId filter replaces the catalog's GET /albums/{id}/songs route
+                // (the catalog API no longer serves songs after the MIG-21 split).
+                var songs = albumId.HasValue
+                    ? await getByAlbumHandler.HandleAsync(albumId.Value, cancellationToken)
+                    : await getAllHandler.HandleAsync(cancellationToken);
                 return TypedResults.Ok(songs);
             })
             .WithName("GetSongs")
-            .WithSummary("Gets all songs")
+            .WithSummary("Gets all songs, optionally filtered by album")
             .Produces<IReadOnlyList<SongDto>>(StatusCodes.Status200OK);
 
         _ = songs.MapGet("/{id:int}", async (int id, GetSongByIdHandler handler, CancellationToken cancellationToken) =>

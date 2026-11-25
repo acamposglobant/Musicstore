@@ -65,13 +65,13 @@ A task is **Done** only when ALL of the following hold:
 
 | Metric | Value |
 |---|---|
-| **Total Tasks** | 30 |
-| **Not Started** | 10 |
+| **Total Tasks** | 36 |
+| **Not Started** | 15 |
 | **In Progress** | 0 |
 | **In Review** | 0 |
 | **Blocked** | 0 |
-| **Completed** | 20 |
-| **Completion %** | `▓▓▓▓▓▓▓░░░ 67%` |
+| **Completed** | 21 |
+| **Completion %** | `▓▓▓▓▓▓░░░░ 58%` |
 
 **Tasks by Phase**
 
@@ -81,9 +81,11 @@ A task is **Done** only when ALL of the following hold:
 | Phase 2: PostgreSQL & Schema Migration | 4 | 4 |
 | Phase 3: Domain & Dapper Infrastructure | 7 | 7 |
 | Phase 4: Minimal APIs & WCF Replacement | 5 | 5 |
-| Phase 5: Microservices Split & YARP Gateway | 3 | 0 |
+| Phase 5: Microservices Split & YARP Gateway | 3 | 1 |
 | Phase 6: xUnit & Aspire Integration Testing | 4 | 0 |
 | Phase 7: Legacy Decommission | 3 | 0 |
+| Phase 8: Web UI (Blazor) | 4 | 0 |
+| Phase 9: Observability Enhancements | 2 | 0 |
 
 ---
 
@@ -91,8 +93,8 @@ A task is **Done** only when ALL of the following hold:
 
 **Select-list values** (keep exactly these strings in the cells):
 
-- **Phase:** `Phase 1: Aspire & Solution Foundation` · `Phase 2: PostgreSQL & Schema Migration` · `Phase 3: Domain & Dapper Infrastructure` · `Phase 4: Minimal APIs & WCF Replacement` · `Phase 5: Microservices Split & YARP Gateway` · `Phase 6: xUnit & Aspire Integration Testing` · `Phase 7: Legacy Decommission`
-- **Target Layer:** `AppHost / Aspire` · `PostgreSQL / DbUp` · `Domain` · `Application` · `Infrastructure (Dapper)` · `API (Minimal APIs)` · `Gateway (YARP)` · `Tests (xUnit)`
+- **Phase:** `Phase 1: Aspire & Solution Foundation` · `Phase 2: PostgreSQL & Schema Migration` · `Phase 3: Domain & Dapper Infrastructure` · `Phase 4: Minimal APIs & WCF Replacement` · `Phase 5: Microservices Split & YARP Gateway` · `Phase 6: xUnit & Aspire Integration Testing` · `Phase 7: Legacy Decommission` · `Phase 8: Web UI (Blazor)` · `Phase 9: Observability Enhancements`
+- **Target Layer:** `AppHost / Aspire` · `PostgreSQL / DbUp` · `Domain` · `Application` · `Infrastructure (Dapper)` · `API (Minimal APIs)` · `Gateway (YARP)` · `Web UI (Blazor)` · `Tests (xUnit)`
 - **Effort:** `XS (1-2h)` · `S (2-4h)` · `M (4-8h)` · `L (1-2d)`
 - **Status:** `Not Started` · `In Progress` · `In Review` · `Blocked` · `Done`
 
@@ -118,7 +120,7 @@ A task is **Done** only when ALL of the following hold:
 | MIG-18 | Phase 4: Minimal APIs & WCF Replacement | Artists & Genres Minimal API endpoints | `Api/Endpoints/ArtistEndpoints.cs`, `GenreEndpoints.cs`: `GET /artists`, `GET /artists/{id}`, `POST`, `PUT`, `DELETE` with `TypedResults.Ok/Created/NoContent/NotFound`, request validation, OpenAPI metadata. Replaces `GetArtist()`/`GetGenres()` SOAP ops. | API (Minimal APIs) | `IMusicStoreService`, `MusicStoreService` | M (4-8h) | Done | MIG-12, MIG-16 |
 | MIG-19 | Phase 4: Minimal APIs & WCF Replacement | Albums & Songs Minimal API endpoints | CRUD endpoints incl. `GET /albums?include=artist,genre` (multi-mapping read path) and `GET /albums/{id}/songs`. Same `TypedResults` + ProblemDetails conventions. | API (Minimal APIs) | `MusicStoreService`, `GetArtistResponse` | M (4-8h) | Done | MIG-13, MIG-14 |
 | MIG-20 | Phase 4: Minimal APIs & WCF Replacement | Observability & API polish | OpenAPI UI, request logging, OTel traces span DB calls (via ServiceDefaults), rate of `LogCritical` parity with NLog wrapper. Structured logging replaces `WrapperLogger`. | API (Minimal APIs) | `MusicStore.Framework/WrapperLogger.cs`, `NLog.config` | S (2-4h) | Done | MIG-18 |
-| MIG-21 | Phase 5: Microservices Split & YARP Gateway | Extract Songs microservice | Move song endpoints + `SongRepository` into `MusicStore.Songs.Api` with its own DB schema/role; catalog API no longer serves songs. Shared Domain via project reference or NuGet split — document choice. | API (Minimal APIs) | `MusicStoreService` (monolith service) | M (4-8h) | Not Started | MIG-19 |
+| MIG-21 | Phase 5: Microservices Split & YARP Gateway | Extract Songs microservice | Move song endpoints + `SongRepository` into `MusicStore.Songs.Api` with its own DB schema/role; catalog API no longer serves songs. Shared Domain via project reference or NuGet split — document choice. | API (Minimal APIs) | `MusicStoreService` (monolith service) | M (4-8h) | Done | MIG-19 |
 | MIG-22 | Phase 5: Microservices Split & YARP Gateway | YARP API Gateway + service discovery | `MusicStore.Gateway` with YARP routes `/catalog/{**catch-all}` → catalog API, `/songs/{**catch-all}` → songs API; endpoints resolved via Aspire service discovery (`AddServiceDiscovery`). Registered in AppHost. | Gateway (YARP) | `MusicStore.Hosts.Web` (single SOAP endpoint) | M (4-8h) | Not Started | MIG-21 |
 | MIG-23 | Phase 5: Microservices Split & YARP Gateway | Resilience & health for downstream calls | Standard resilience handlers (retry/circuit-breaker/timeout) on gateway + inter-service `HttpClient`; health checks aggregate DB + downstream; dashboard all green. | AppHost / Aspire | `myWCFMessages.xml` tracing (replaced by OTel) | S (2-4h) | Not Started | MIG-22 |
 | MIG-24 | Phase 6: xUnit & Aspire Integration Testing | xUnit unit tests for Application handlers | `MusicStore.Application.UnitTests`: NSubstitute mocks of repository interfaces; cover happy path + not-found + validation for every handler. Zero DB access. | Tests (xUnit) | `MusicStore.Data.Test` (MSTest) | M (4-8h) | Not Started | MIG-16 |
@@ -128,6 +130,12 @@ A task is **Done** only when ALL of the following hold:
 | MIG-28 | Phase 7: Legacy Decommission | Cutover checklist & freeze legacy | Verify parity report, export final SQL Server data snapshot, tag `legacy/final` in git, freeze `Legacy/` (no further changes). | PostgreSQL / DbUp | `Legacy/` (whole tree) | S (2-4h) | Not Started | MIG-27 |
 | MIG-29 | Phase 7: Legacy Decommission | Delete legacy projects | Remove `Legacy/` from repo: WCF host/services/contracts, Silverlight + Silverlight.Web, WPF shell, `UI.Process`, `Data.Agents`, EDMX/T4 projects, MSTest projects, `backup.MusicStoreRepository.cs`. Solution builds clean with only new projects. | API (Minimal APIs) | `MusicStore.sln` legacy entries | S (2-4h) | Not Started | MIG-28 |
 | MIG-30 | Phase 7: Legacy Decommission | Final docs & architecture update | Rewrite `ARCHITECTURE.md` for the target state (Aspire + Clean Architecture + Dapper/PostgreSQL), update README with run instructions (`dotnet run --project AppHost`), record lessons learned. | Tests (xUnit) | `ARCHITECTURE.md`, `README.md` | XS (1-2h) | Not Started | MIG-29 |
+| MIG-31 | Phase 8: Web UI (Blazor) | Scaffold Blazor Web App + Aspire registration | `src/MusicStore.Web` (Blazor Web App, Interactive Server), typed `CatalogApiClient` targeting the gateway; registered in AppHost with `WithReference(gateway)`; ProblemDetails surfaced as UI error messages. Plan: `docs/MIG-UI-migration-plan.md`. | Web UI (Blazor) | `MusicStore.UI.Silverlight` (empty skeleton — capability replacement, not a port) | M (4-8h) | Not Started | MIG-22 |
+| MIG-32 | Phase 8: Web UI (Blazor) | Catalog browse views | Components: Artists list, Genres list, Albums list (artist/genre names via enriched read path), Album detail with its songs (`GET /songs?albumId=`). Read-only. | Web UI (Blazor) | `MusicStore.UI.Silverlight/MainPage.xaml` (empty Grid — intended catalog browser) | M (4-8h) | Not Started | MIG-31, MIG-19 |
+| MIG-33 | Phase 8: Web UI (Blazor) | Catalog management (CRUD) views | Create/edit/delete forms for artists, genres, albums, songs; 422 ProblemDetails validation errors rendered inline; 404 → friendly not-found page. | Web UI (Blazor) | — (legacy UI never implemented CRUD) | M (4-8h) | Not Started | MIG-32 |
+| MIG-34 | Phase 8: Web UI (Blazor) | UI integration coverage | Extend Aspire integration tests: gateway → UI smoke (pages render, API consumed through gateway); OpenAPI contract stays source of truth. | Tests (xUnit) | — | S (2-4h) | Not Started | MIG-33, MIG-26 |
+| MIG-35 | Phase 9: Observability Enhancements | Serilog structured logging foundation | Add Serilog to both APIs (Serilog.AspNetCore): console + file sinks, enrichment (machine, correlation ids), `UseSerilogRequestLogging()`. Config via appsettings (no hardcoded paths). Coexists with OTel exporter. | API (Minimal APIs) | `MusicStore.Framework/WrapperLogger.cs` (NLog) | S (2-4h) | Not Started | MIG-20, MIG-21 |
+| MIG-36 | Phase 9: Observability Enhancements | End-to-end call tracing: endpoint → handler → repository | Correlation id per request flows from endpoint through handler to repository; every call logged with operation name + parameters (ids, request payloads; no sensitive data). Serilog `LogContext`/`BeginRequestScope` + `ILogger<T>` in handlers + repositories (log SQL statement + parameters at Debug). One log line per layer, same correlation id. | Application, Infrastructure (Dapper) | `BaseRepository` (no logging), `WrapperLogger` | M (4-8h) | Not Started | MIG-35 |
 
 ---
 
