@@ -8,15 +8,20 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ServiceDefaults: OTel traces/metrics exporter, health endpoints, resilience,
+// service discovery (review H1 — accidentally dropped in the MIG-35 commit).
+builder.AddServiceDefaults();
+
 // Serilog (MIG-35): structured logging with console + file sinks, enriched with
 // machine name and correlation id. Config lives in appsettings.json (Serilog
-// section) — no hardcoded paths. Coexists with the OTel exporter from
-// ServiceDefaults (traces/metrics) — Serilog owns the text logs.
+// section) — no hardcoded paths. writeToProviders keeps the OpenTelemetry log
+// provider registered by AddServiceDefaults alive, so logs also reach the
+// Aspire dashboard (review M2); Serilog owns the console/file text logs.
 builder.Host.UseSerilog((context, services, configuration) => configuration
     .ReadFrom.Configuration(context.Configuration)
     .ReadFrom.Services(services)
     .Enrich.FromLogContext()
-    .Enrich.WithMachineName());
+    .Enrich.WithMachineName(), writeToProviders: true);
 
 // PostgreSQL data access registered by Infrastructure: singleton NpgsqlDataSource
 // bound to the Aspire-injected connection string + Dapper snake_case conventions.
