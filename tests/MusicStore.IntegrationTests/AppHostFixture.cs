@@ -22,6 +22,9 @@ public sealed class AppHostFixture : IAsyncLifetime
 
     public HttpClient GatewayClient { get; private set; } = null!;
 
+    /// <summary>HttpClient bound to the Blazor web app resource (MIG-34 UI smoke tests).</summary>
+    public HttpClient WebClient { get; private set; } = null!;
+
     public async Task InitializeAsync()
     {
         Builder = await DistributedApplicationTestingBuilder
@@ -32,13 +35,16 @@ public sealed class AppHostFixture : IAsyncLifetime
         await app.StartAsync();
 
         await app.ResourceNotifications.WaitForResourceHealthyAsync("gateway");
+        await app.ResourceNotifications.WaitForResourceHealthyAsync("web");
 
         GatewayClient = app.CreateHttpClient("gateway");
+        WebClient = app.CreateHttpClient("web");
     }
 
     public async Task DisposeAsync()
     {
         GatewayClient.Dispose();
+        WebClient.Dispose();
         if (app is not null)
         {
             await app.StopAsync();
